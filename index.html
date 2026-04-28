@@ -582,13 +582,14 @@ function setDragItemFromEvent(e) {
 
 function dropOnTier(e, tierId) {
   e.preventDefault();
-  e.currentTarget.classList.remove('drag-over');
+  const cell = e.target.closest(".tier-items-cell");
+  if (!cell) return;
+  cell.classList.remove("drag-over");
   if (!dragItemId) return;
 
   const item = state.items.find(i => i.id === dragItemId);
   if (!item) return;
 
-  const cell = e.currentTarget;
   const rect = cell.getBoundingClientRect();
   const chip = document.querySelector(`.item-chip[data-item-id="${CSS.escape(dragItemId)}"]`);
   const chipWidth = chip?.offsetWidth || 120;
@@ -599,14 +600,13 @@ function dropOnTier(e, tierId) {
   item.tierId = tierId;
   const tier = state.tiers.find(t => t.id === tierId);
   item.lastTierId = tierId;
-  item.lastTierLabel = tier?.label || '';
+  item.lastTierLabel = tier?.label || "";
   item.xPct = rect.width ? x / rect.width * 100 : 0;
   item.yPct = rect.height ? y / rect.height * 100 : 0;
 
   dragItemId = null;
   render();
 }
-
 function dropOnPool(e) {
   e.preventDefault();
   els.pool.classList.remove('drag-over');
