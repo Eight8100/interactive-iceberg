@@ -24,6 +24,7 @@
   --mono: "Courier New", monospace;
   --header-h: 66px;
   --sidebar-w: 270px;
+  --detail-w: 330px;
   --canvas-w: 980px;
   --canvas-h: 1752px;
   --label-w: 185px;
@@ -156,7 +157,7 @@ input[type="range"] { width: 100%; }
   padding: 22px 28px;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
 }
 .iceberg-wrapper {
   flex: 0 0 auto;
@@ -225,30 +226,33 @@ input[type="range"] { width: 100%; }
   text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 3px 4px rgba(0,0,0,.9);
   cursor: grab;
 }
-.item-chip.dragging { opacity: .45; cursor: grabbing; }
+.item-chip.dragging { cursor: grabbing; }
 .item-chip-text { display: block; overflow-wrap: break-word; }
 .tier-items-cell .item-chip {
   position: absolute;
   z-index: 3;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) scale(1);
+  transform-origin: center center;
+  width: max-content;
   max-width: 220px;
   padding: 3px 6px;
-  border: 1px solid transparent;
-  border-radius: 8px;
+  border: 0;
+  border-radius: 0;
   background: transparent;
+  box-shadow: none;
+  transition: transform .16s cubic-bezier(.2,.8,.2,1), color .16s cubic-bezier(.2,.8,.2,1);
 }
-.tier-items-cell .item-chip:hover {
-  background: rgba(13,22,39,.82);
-  border-color: rgba(180,220,255,.3);
-  box-shadow: 0 2px 9px rgba(0,0,0,.32);
-}
-.tier-items-cell .item-chip:hover .item-chip-text { color: var(--remove); }
+.tier-items-cell .item-chip:hover,
 .tier-items-cell .item-chip.selected {
-  background: rgba(58,49,13,.72);
-  border-color: rgba(255,231,106,.75);
-  box-shadow: 0 0 0 1px rgba(0,0,0,.8), 0 2px 10px rgba(0,0,0,.38);
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  transform: translate(-50%, -50%) scale(1.08);
 }
-.tier-items-cell .item-chip.selected .item-chip-text { color: var(--remove); }
+.tier-items-cell .item-chip:hover .item-chip-text,
+.tier-items-cell .item-chip.selected .item-chip-text {
+  color: var(--remove);
+}
 .selection-box {
   position: absolute;
   z-index: 8;
@@ -258,9 +262,11 @@ input[type="range"] { width: 100%; }
   box-shadow: 0 0 0 1px rgba(0,0,0,.55);
 }
 .tier-items-cell .item-chip-text {
+  width: max-content;
   max-width: 210px;
   text-align: center;
   font-size: var(--entry-size);
+  white-space: normal;
 }
 .unplaced-pool .item-chip {
   position: relative;
@@ -307,6 +313,103 @@ input[type="range"] { width: 100%; }
   line-height: 1.12;
   text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 3px 4px rgba(0,0,0,.9);
 }
+
+
+.detail-sidebar {
+  flex: 0 0 var(--detail-w);
+  width: var(--detail-w);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  overflow-y: auto;
+  background: var(--bg2);
+  border-left: 1px solid var(--border);
+}
+.detail-sidebar h3 {
+  margin: 0;
+  color: var(--text3);
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.detail-card {
+  display: none;
+  padding: 14px;
+  background: rgba(0,0,0,.18);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.detail-card.active { display: block; }
+.detail-title-input,
+.detail-description-input {
+  width: 100%;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  outline: 0;
+}
+.detail-title-input:focus,
+.detail-description-input:focus { border-color: var(--accent); }
+.detail-title-input {
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  color: #fff;
+  font-size: 20px;
+  line-height: 1.15;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+  text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 3px 4px rgba(0,0,0,.9);
+}
+.detail-title-error {
+  min-height: 16px;
+  margin: -3px 0 8px;
+  color: var(--danger);
+  font-size: 12px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.detail-tier {
+  display: block;
+  margin-bottom: 14px;
+  color: var(--text3);
+  font-family: var(--mono);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.detail-description-input {
+  min-height: 220px;
+  padding: 9px 10px;
+  color: var(--text2);
+  font-size: 14px;
+  line-height: 1.55;
+  resize: vertical;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+.detail-edit-area { display: flex; flex-direction: column; gap: 8px; }
+.detail-edit-area[hidden] { display: none; }
+.detail-edit-area input, .detail-edit-area textarea {
+  width: 100%;
+  padding: 8px 10px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  outline: 0;
+}
+.detail-edit-area textarea { min-height: 150px; resize: vertical; }
+.detail-edit-area input:focus, .detail-edit-area textarea:focus { border-color: var(--accent); }
 
 .modal-overlay {
   position: fixed;
@@ -363,6 +466,366 @@ input[type="range"] { width: 100%; }
 }
 .modal-edit-area textarea { min-height: 110px; resize: vertical; }
 .modal-edit-area input:focus, .modal-edit-area textarea:focus { border-color: var(--accent); }
+
+
+/* Click-to-edit detail panel */
+[hidden] { display: none !important; }
+.editable-display {
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: text;
+}
+.editable-display:hover,
+.editable-display:focus {
+  border-color: rgba(100,160,255,.22);
+  background: rgba(255,255,255,.03);
+}
+.detail-title-display,
+.detail-title-edit {
+  margin: 0 0 8px;
+  color: #fff;
+  font-size: 20px;
+  line-height: 1.15;
+  font-weight: 900;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 3px 4px rgba(0,0,0,.9);
+}
+.detail-title-display { padding: 7px 8px; }
+.detail-title-edit,
+.detail-description-edit {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  outline: 0;
+}
+.detail-title-edit {
+  min-height: 56px;
+  padding: 8px 10px;
+  resize: vertical;
+}
+.detail-title-edit:focus,
+.detail-description-edit:focus { border-color: var(--accent); }
+.detail-description-display,
+.detail-description-edit {
+  color: var(--text2);
+  font-size: 14px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.detail-description-display {
+  min-height: 180px;
+  padding: 9px 8px;
+}
+.detail-description-display.empty {
+  color: var(--text3);
+  font-style: italic;
+}
+.detail-description-edit {
+  min-height: 220px;
+  padding: 9px 10px;
+  resize: vertical;
+}
+
+
+/* Markdown detail rendering and subtle detail animation */
+.detail-card.active {
+  animation: detailIn .18s cubic-bezier(.2,.8,.2,1);
+}
+@keyframes detailIn {
+  from { opacity: .72; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.detail-tier {
+  display: inline-block;
+  margin: 2px 0 14px;
+  padding: 6px 9px;
+  color: #dbeafe;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  background: rgba(74,158,255,.12);
+  border: 1px solid rgba(100,160,255,.35);
+  border-radius: 999px;
+  overflow-wrap: anywhere;
+}
+.detail-description-display {
+  overflow: hidden;
+}
+.detail-description-display p { margin: 0 0 .75em; }
+.detail-description-display p:last-child { margin-bottom: 0; }
+.detail-description-display strong { color: var(--text); font-weight: 900; }
+.detail-description-display em { color: var(--text); }
+.detail-description-display a { color: #8ec5ff; text-decoration: underline; text-underline-offset: 2px; }
+.detail-description-display ul { margin: .35em 0 .8em 1.25em; padding: 0; }
+.detail-description-display li { margin: .2em 0; }
+.detail-description-display img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 10px 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: rgba(0,0,0,.18);
+}
+.detail-description-display code {
+  padding: 1px 4px;
+  background: rgba(255,255,255,.08);
+  border-radius: 3px;
+  font-family: var(--mono);
+  font-size: .92em;
+}
+.btn.image { background: #1b2a3f; border-color: rgba(100,160,255,.28); color: #b9dcff; }
+.btn.image:hover { background: #223755; border-color: rgba(100,160,255,.45); }
+
+/* V12 sidebar polish and markdown tools */
+.detail-card {
+  padding: 22px 20px;
+}
+.detail-title-display,
+.detail-title-edit {
+  margin: 0 0 16px;
+  font-size: 30px;
+  line-height: 1.08;
+}
+.detail-title-display {
+  padding: 6px 0;
+}
+.detail-tier {
+  display: block;
+  margin: 0 0 22px;
+  padding: 0;
+  color: #dbeafe;
+  font-family: var(--mono);
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: .04em;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  text-shadow: 0 2px 4px rgba(0,0,0,.85);
+}
+.markdown-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 10px;
+  opacity: .86;
+  transform: translateY(0);
+  transition: opacity .18s ease, transform .18s ease;
+}
+.detail-card.active .markdown-toolbar {
+  animation: detailToolIn .22s cubic-bezier(.2,.8,.2,1);
+}
+@keyframes detailToolIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: .86; transform: translateY(0); }
+}
+.format-btn {
+  padding: 5px 8px;
+  color: #cfe2ff;
+  background: rgba(30,45,69,.8);
+  border: 1px solid rgba(100,160,255,.2);
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  transition: transform .15s ease, background .15s ease, border-color .15s ease;
+}
+.format-btn:hover {
+  background: rgba(36,52,82,.95);
+  border-color: rgba(100,160,255,.42);
+  transform: translateY(-1px);
+}
+.detail-description-display,
+.detail-description-edit {
+  transition: opacity .18s ease, transform .18s ease, border-color .15s ease, background .15s ease;
+}
+.detail-description-display {
+  min-height: 130px;
+  padding: 6px 0;
+}
+.detail-description-display:hover,
+.detail-description-display:focus,
+.detail-title-display:hover,
+.detail-title-display:focus {
+  border-color: transparent;
+  background: transparent;
+  color: #c7d4e8;
+}
+.detail-description-display img {
+  max-height: 260px;
+  object-fit: contain;
+}
+
+
+
+/* V14 detail-panel spacing and guide */
+.detail-card {
+  padding: 30px 28px;
+}
+.detail-title-display,
+.detail-title-edit {
+  margin: 0;
+  font-size: 34px;
+  line-height: 1.08;
+}
+.detail-title-display {
+  padding: 4px 0 2px;
+}
+.detail-title-error {
+  margin: 4px 0 0;
+}
+.detail-tier {
+  display: block;
+  margin: 8px 0 28px;
+  padding: 0;
+  color: #dbeafe;
+  font-family: var(--mono);
+  font-size: 18px;
+  line-height: 1.2;
+  font-weight: 900;
+  letter-spacing: .045em;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  text-shadow: 0 2px 4px rgba(0,0,0,.85);
+}
+.detail-description-display,
+.detail-description-edit {
+  margin: 0;
+}
+.detail-description-display {
+  min-height: 150px;
+  padding: 0;
+}
+.detail-description-edit {
+  min-height: 220px;
+}
+.markdown-toolbar,
+.format-btn {
+  display: none !important;
+}
+.markdown-guide {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(100,160,255,.13);
+  color: var(--text3);
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.65;
+  opacity: .86;
+}
+.markdown-guide-title {
+  margin-bottom: 4px;
+  color: #9fb4d3;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.markdown-guide code {
+  display: inline-block;
+  margin: 2px 3px 2px 0;
+  padding: 1px 4px;
+  color: #cfe2ff;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(100,160,255,.12);
+  border-radius: 3px;
+  font-family: var(--mono);
+}
+.detail-actions {
+  margin-top: 24px;
+}
+
+
+
+/* V15 detail polish */
+.detail-card {
+  padding: 24px 24px 20px;
+  border-color: rgba(255,231,106,.22);
+  box-shadow: inset 0 0 0 1px rgba(255,231,106,.04);
+}
+.detail-card.active {
+  border-color: rgba(255,231,106,.28);
+  box-shadow: inset 0 0 0 1px rgba(255,231,106,.06);
+}
+.detail-title-display,
+.detail-title-edit {
+  margin: 0;
+  font-size: 28px;
+  line-height: 1.02;
+  overflow-wrap: break-word;
+  word-break: normal;
+  hyphens: auto;
+}
+.detail-title-display {
+  padding: 0 0 2px;
+}
+.detail-title-edit {
+  min-height: 52px;
+}
+.detail-title-error {
+  margin: 4px 0 0;
+}
+.detail-tier {
+  margin: 6px 0 14px;
+  font-size: 15px;
+  line-height: 1.15;
+  letter-spacing: .06em;
+  color: #d9e7ff;
+}
+.detail-description-display,
+.detail-description-edit {
+  margin: 0;
+}
+.detail-description-display {
+  min-height: 120px;
+  padding: 0;
+}
+.detail-description-edit {
+  min-height: 190px;
+}
+.markdown-guide {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(100,160,255,.13);
+}
+.markdown-guide-title {
+  margin: 0;
+  color: #9fb4d3;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+}
+.markdown-guide-title::-webkit-details-marker {
+  display: none;
+}
+.markdown-guide-title::after {
+  content: 'Show';
+  margin-left: 8px;
+  color: var(--text3);
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.markdown-guide[open] .markdown-guide-title::after {
+  content: 'Hide';
+}
+.markdown-guide-body {
+  margin-top: 8px;
+}
+.detail-actions {
+  margin-top: 18px;
+}
+
 </style>
 </head>
 <body>
@@ -406,7 +869,7 @@ input[type="range"] { width: 100%; }
       <h3>Add Item</h3>
       <input type="text" id="new-item-name" placeholder="Item name..." maxlength="80" aria-describedby="add-item-error">
       <div class="duplicate-error" id="add-item-error" aria-live="polite"></div>
-      <textarea id="new-item-desc" placeholder="Description (optional) shown on hover/click..."></textarea>
+      <textarea id="new-item-desc" placeholder="Description (optional, supports markdown)..."></textarea>
       <button class="btn primary" id="add-item-btn">Add Item</button>
     </div>
   </aside>
@@ -416,9 +879,33 @@ input[type="range"] { width: 100%; }
       <div class="tiers-container" id="tiers-container"></div>
     </div>
   </section>
+
+  <aside class="detail-sidebar" id="detail-sidebar" aria-label="Entry details">
+    <h3>Entry Details</h3>
+    <div class="detail-card" id="detail-card">
+      <div class="detail-title-display editable-display" id="detail-title-display" role="button" tabindex="0" title="Click to edit title"></div>
+      <textarea class="detail-title-edit" id="detail-title-edit" maxlength="80" rows="2" placeholder="Entry title..." hidden></textarea>
+      <div class="detail-title-error" id="detail-title-error" aria-live="polite"></div>
+      <span class="detail-tier" id="detail-tier"></span>
+      <div class="detail-description-display editable-display" id="detail-description-display" role="button" tabindex="0" title="Click to edit description"></div>
+      <textarea class="detail-description-edit" id="detail-description-edit" placeholder="Description..." hidden></textarea>
+      <details class="markdown-guide" aria-label="Markdown guide">
+        <summary class="markdown-guide-title">Markdown guide</summary>
+        <div class="markdown-guide-body">
+          <div><code>**bold**</code> <code>*italic*</code> <code>`code`</code></div>
+          <div><code>- list item</code></div>
+          <div><code>[link](https://example.com)</code></div>
+          <div><code>![image alt](https://example.com/image.png)</code></div>
+        </div>
+      </details>
+      <div class="detail-actions">
+        <button class="btn remove" id="detail-remove-delete-btn">Remove</button>
+      </div>
+    </div>
+  </aside>
 </main>
 
-<div class="modal-overlay hidden" id="modal-overlay">
+<div class="modal-overlay hidden" id="modal-overlay" aria-hidden="true">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <button class="modal-close" id="modal-close" aria-label="Close">&#x2715;</button>
     <div id="modal-view-mode">
@@ -484,7 +971,9 @@ const els = {
   title: $('chart-title'), file: $('file-input'), pool: $('unplaced-pool'), tiers: $('tiers-container'), wrapper: $('iceberg-wrapper'),
   entrySize: $('entry-size'), entrySizeValue: $('entry-size-value'), newName: $('new-item-name'), newDesc: $('new-item-desc'), addError: $('add-item-error'),
   modal: $('modal-overlay'), viewMode: $('modal-view-mode'), editMode: $('modal-edit-mode'), modalTitle: $('modal-title'), modalTier: $('modal-tier'), modalDesc: $('modal-desc-text'),
-  modalEditName: $('modal-edit-name'), modalEditDesc: $('modal-edit-desc'), removeDelete: $('modal-remove-delete-btn')
+  modalEditName: $('modal-edit-name'), modalEditDesc: $('modal-edit-desc'), removeDelete: $('modal-remove-delete-btn'),
+  detailCard: $('detail-card'), detailTitleDisplay: $('detail-title-display'), detailTitleEdit: $('detail-title-edit'), detailTitleError: $('detail-title-error'), detailTier: $('detail-tier'),
+  detailDescDisplay: $('detail-description-display'), detailDescEdit: $('detail-description-edit'), detailRemoveDelete: $('detail-remove-delete-btn')
 };
 
 function uid() {
@@ -498,6 +987,82 @@ function clamp(num, min, max) {
 function normalizeName(name) {
   return String(name || '').trim().toLowerCase();
 }
+function escapeHtml(value) {
+  return String(value || '').replace(/[&<>"']/g, char => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[char]));
+}
+
+function safeUrl(url) {
+  const value = String(url || '').trim();
+  if (/^(https?:|data:image\/)/i.test(value)) return value;
+  return '';
+}
+
+function renderInlineMarkdown(text) {
+  let html = escapeHtml(text);
+  html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, url) => {
+    const cleanUrl = safeUrl(url);
+    if (!cleanUrl) return escapeHtml(alt);
+    return `<img src="${cleanUrl}" alt="${escapeHtml(alt)}" loading="lazy">`;
+  });
+  html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+  return html;
+}
+
+function renderMarkdown(markdown) {
+  const source = String(markdown || '').trim();
+  if (!source) return '';
+  const lines = source.split(/\r?\n/);
+  const chunks = [];
+  let paragraph = [];
+  let list = [];
+
+  const flushParagraph = () => {
+    if (!paragraph.length) return;
+    chunks.push(`<p>${renderInlineMarkdown(paragraph.join('\n')).replace(/\n/g, '<br>')}</p>`);
+    paragraph = [];
+  };
+  const flushList = () => {
+    if (!list.length) return;
+    chunks.push(`<ul>${list.map(item => `<li>${renderInlineMarkdown(item)}</li>`).join('')}</ul>`);
+    list = [];
+  };
+
+  lines.forEach(line => {
+    const bullet = line.match(/^\s*[-*]\s+(.+)$/);
+    if (bullet) {
+      flushParagraph();
+      list.push(bullet[1]);
+      return;
+    }
+    if (!line.trim()) {
+      flushParagraph();
+      flushList();
+      return;
+    }
+    flushList();
+    paragraph.push(line);
+  });
+  flushParagraph();
+  flushList();
+  return chunks.join('');
+}
+
+function setDescriptionDisplay(markdown) {
+  const description = String(markdown || '');
+  if (description.trim()) {
+    els.detailDescDisplay.innerHTML = renderMarkdown(description);
+    els.detailDescDisplay.classList.remove('empty');
+  } else {
+    els.detailDescDisplay.textContent = 'No description yet. Click to add one.';
+    els.detailDescDisplay.classList.add('empty');
+  }
+}
+
 
 function findDuplicateName(name, excludeId = null) {
   const normalized = normalizeName(name);
@@ -617,6 +1182,7 @@ function render() {
   applyEntrySize();
   renderTiers();
   renderPool();
+  if (currentItemId) renderDetailPanel();
 }
 
 function renderTiers() {
@@ -728,39 +1294,43 @@ function removeItemToPool(item) {
 function deleteItem(id) {
   selectedItemIds.delete(id);
   state.items = state.items.filter(item => item.id !== id);
+  if (currentItemId === id) currentItemId = null;
   render();
+  renderDetailPanel();
 }
 
 function makeDragGhost(chip, item) {
   clearDragGhost();
 
+  const chipStyles = getComputedStyle(chip);
+  const textEl = chip.querySelector('.item-chip-text');
+  const textStyles = getComputedStyle(textEl || chip);
+
+  dragGhost = document.createElement('div');
+  dragGhost.className = 'drag-ghost';
+  dragGhost.textContent = item?.name || textEl?.textContent || chip.textContent.trim();
+
+  Object.assign(dragGhost.style, {
+    fontFamily: chipStyles.fontFamily,
+    fontSize: textStyles.fontSize,
+    fontWeight: chipStyles.fontWeight,
+    letterSpacing: chipStyles.letterSpacing,
+    lineHeight: chipStyles.lineHeight,
+    textAlign: item?.tierId ? 'center' : 'left',
+    whiteSpace: textStyles.whiteSpace,
+    overflowWrap: textStyles.overflowWrap,
+    wordBreak: textStyles.wordBreak,
+    width: item?.tierId ? `${textEl?.offsetWidth || chip.offsetWidth}px` : 'auto',
+    maxWidth: item?.tierId ? `${textEl?.offsetWidth || chip.offsetWidth}px` : 'none',
+    padding: '0',
+    margin: '0',
+    background: 'transparent',
+    border: '0',
+    boxShadow: 'none'
+  });
+
   if (!item?.tierId) {
-    dragGhost = document.createElement('div');
-    dragGhost.className = 'drag-ghost';
-    dragGhost.style.fontSize = '14px';
     dragGhost.style.whiteSpace = 'nowrap';
-    dragGhost.textContent = item?.name || chip.textContent.trim();
-  } else {
-    dragGhost = chip.cloneNode(true);
-    dragGhost.classList.remove('dragging', 'selected');
-    dragGhost.classList.add('drag-ghost');
-    dragGhost.style.position = 'fixed';
-    dragGhost.style.top = '-200px';
-    dragGhost.style.left = '-200px';
-    dragGhost.style.transform = 'none';
-    dragGhost.style.width = `${chip.offsetWidth}px`;
-    dragGhost.style.maxWidth = `${chip.offsetWidth}px`;
-    dragGhost.style.background = 'rgba(13,22,39,.82)';
-    dragGhost.style.border = '1px solid rgba(180,220,255,.3)';
-    dragGhost.style.borderRadius = '8px';
-    dragGhost.style.padding = getComputedStyle(chip).padding;
-    const text = dragGhost.querySelector('.item-chip-text');
-    if (text) {
-      text.style.maxWidth = `${chip.querySelector('.item-chip-text')?.offsetWidth || chip.offsetWidth}px`;
-      text.style.whiteSpace = getComputedStyle(chip.querySelector('.item-chip-text') || chip).whiteSpace;
-      text.style.overflowWrap = 'break-word';
-      text.style.textAlign = 'center';
-    }
   }
 
   document.body.appendChild(dragGhost);
@@ -796,7 +1366,7 @@ function setDragItemFromEvent(e) {
   e.dataTransfer.setData('text/plain', dragItemId);
 
   const ghost = makeDragGhost(chip, item);
-  e.dataTransfer.setDragImage?.(ghost, Math.round(ghost.offsetWidth / 2), Math.round(ghost.offsetHeight / 2));
+  e.dataTransfer.setDragImage?.(ghost, Math.round((ghost.offsetWidth || chip.offsetWidth) / 2), Math.round((ghost.offsetHeight || chip.offsetHeight) / 2));
 
   if (item.tierId) {
     const primaryStart = getItemCanvasPosition(item);
@@ -883,59 +1453,176 @@ function dropOnPool(e) {
   render();
 }
 
-function openModal(itemId) {
-  currentItemId = itemId;
-  const item = state.items.find(i => i.id === itemId);
-  if (!item) return;
+function showDetailTitleError(message = '') {
+  els.detailTitleError.textContent = message;
+}
+
+function renderDetailPanel() {
+  const item = state.items.find(i => i.id === currentItemId);
+  if (!item) {
+    els.detailCard.classList.remove('active');
+    showDetailTitleError('');
+    return;
+  }
 
   const tier = state.tiers.find(t => t.id === item.tierId);
   const lastTier = item.lastTierId ? state.tiers.find(t => t.id === item.lastTierId) : null;
   const lastTierLabel = lastTier?.label || item.lastTierLabel;
 
-  els.modalTitle.textContent = item.name;
-  els.modalTier.textContent = tier ? `Tier: ${tier.label}` : (lastTierLabel ? `Last tier: ${lastTierLabel}` : 'Unplaced');
-  els.removeDelete.textContent = item.tierId ? 'Remove' : 'Delete';
-  els.removeDelete.className = item.tierId ? 'btn remove' : 'btn danger';
+  els.detailTitleDisplay.textContent = item.name;
+  els.detailTitleEdit.value = item.name;
+  const description = item.description || '';
+  setDescriptionDisplay(description);
+  els.detailDescEdit.value = description;
+  els.detailTitleDisplay.hidden = false;
+  els.detailTitleEdit.hidden = true;
+  els.detailDescDisplay.hidden = false;
+  els.detailDescEdit.hidden = true;
+  els.detailTier.textContent = tier ? tier.label : (lastTierLabel ? `Last tier: ${lastTierLabel}` : 'Unplaced');
+  els.detailRemoveDelete.textContent = item.tierId ? 'Remove' : 'Delete';
+  els.detailRemoveDelete.className = item.tierId ? 'btn remove' : 'btn danger';
+  showDetailTitleError('');
+  els.detailCard.classList.remove('active');
+  void els.detailCard.offsetWidth;
+  els.detailCard.classList.add('active');
+}
 
-  els.modalDesc.innerHTML = '';
-  const p = document.createElement('p');
-  p.className = item.description ? 'desc-text' : 'no-desc';
-  p.textContent = item.description || 'No description yet. Click Edit to add one.';
-  els.modalDesc.appendChild(p);
-
-  els.viewMode.hidden = false;
-  els.editMode.hidden = true;
-  els.modal.classList.remove('hidden');
+function openModal(itemId) {
+  currentItemId = itemId;
+  renderDetailPanel();
 }
 
 function closeModal() {
   els.modal.classList.add('hidden');
-  currentItemId = null;
 }
 
-function switchToEdit() {
+function beginTitleEdit() {
   const item = state.items.find(i => i.id === currentItemId);
   if (!item) return;
-  els.modalEditName.value = item.name;
-  els.modalEditDesc.value = item.description || '';
-  els.viewMode.hidden = true;
-  els.editMode.hidden = false;
+  els.detailTitleEdit.value = item.name;
+  els.detailTitleDisplay.hidden = true;
+  els.detailTitleEdit.hidden = false;
+  els.detailTitleEdit.focus();
+  els.detailTitleEdit.select();
 }
 
-function saveEdit() {
+function finishTitleEdit() {
   const item = state.items.find(i => i.id === currentItemId);
-  const name = els.modalEditName.value.trim();
-  if (!item || !name) return;
-  if (findDuplicateName(name, item.id)) {
-    alert(`${name} already exists!`);
-    els.modalEditName.focus();
-    els.modalEditName.select();
+  if (!item) return;
+  const name = els.detailTitleEdit.value.trim();
+  if (!name) {
+    showDetailTitleError('Title cannot be blank.');
+    els.detailTitleEdit.value = item.name;
+    els.detailTitleEdit.focus();
     return;
   }
+  const duplicate = findDuplicateName(name, item.id);
+  if (duplicate) {
+    showDetailTitleError(`${name} already exists!`);
+    els.detailTitleEdit.value = item.name;
+    els.detailTitleEdit.focus();
+    return;
+  }
+  showDetailTitleError('');
   item.name = name;
-  item.description = els.modalEditDesc.value.trim();
-  closeModal();
-  render();
+  els.detailTitleDisplay.textContent = item.name;
+  els.detailTitleDisplay.hidden = false;
+  els.detailTitleEdit.hidden = true;
+  renderTiers();
+  renderPool();
+}
+
+function beginDescriptionEdit() {
+  const item = state.items.find(i => i.id === currentItemId);
+  if (!item) return;
+  els.detailDescEdit.value = item.description || '';
+  els.detailDescDisplay.hidden = true;
+  els.detailDescEdit.hidden = false;
+  els.detailDescEdit.focus();
+}
+
+function finishDescriptionEdit() {
+  const item = state.items.find(i => i.id === currentItemId);
+  if (!item) return;
+  item.description = els.detailDescEdit.value;
+  const description = item.description || '';
+  setDescriptionDisplay(description);
+  els.detailDescDisplay.hidden = false;
+  els.detailDescEdit.hidden = true;
+}
+
+function insertTextIntoDescription(text) {
+  const item = state.items.find(i => i.id === currentItemId);
+  if (!item) return;
+  const addition = String(text || '');
+  const existing = String(item.description || '').trimEnd();
+  item.description = `${existing}${existing ? '\n\n' : ''}${addition}`;
+  if (!els.detailDescEdit.hidden) {
+    els.detailDescEdit.value = item.description;
+    els.detailDescEdit.focus();
+  } else {
+    setDescriptionDisplay(item.description);
+  }
+}
+
+function ensureDescriptionEdit() {
+  if (!currentItemId) return false;
+  if (els.detailDescEdit.hidden) beginDescriptionEdit();
+  return true;
+}
+
+function syncDescriptionDraft() {
+  const item = state.items.find(i => i.id === currentItemId);
+  if (!item) return;
+  item.description = els.detailDescEdit.value;
+}
+
+function replaceSelectionInDescription(before, after = '', placeholder = 'text') {
+  if (!ensureDescriptionEdit()) return;
+  const textarea = els.detailDescEdit;
+  const start = textarea.selectionStart ?? textarea.value.length;
+  const end = textarea.selectionEnd ?? textarea.value.length;
+  const selected = textarea.value.slice(start, end) || placeholder;
+  textarea.setRangeText(`${before}${selected}${after}`, start, end, 'select');
+  textarea.focus();
+  syncDescriptionDraft();
+}
+
+function insertAtDescriptionCursor(text) {
+  if (!ensureDescriptionEdit()) return;
+  const textarea = els.detailDescEdit;
+  const start = textarea.selectionStart ?? textarea.value.length;
+  const end = textarea.selectionEnd ?? textarea.value.length;
+  const prefix = start > 0 && textarea.value[start - 1] !== '\n' ? '\n' : '';
+  textarea.setRangeText(prefix + text, start, end, 'end');
+  textarea.focus();
+  syncDescriptionDraft();
+}
+
+function handleMarkdownToolbar(action) {
+  if (!currentItemId) return;
+  if (action === 'bold') return replaceSelectionInDescription('**', '**', 'bold text');
+  if (action === 'italic') return replaceSelectionInDescription('*', '*', 'italic text');
+  if (action === 'code') return replaceSelectionInDescription('`', '`', 'code');
+  if (action === 'bullet') return insertAtDescriptionCursor('- list item');
+  if (action === 'link') {
+    if (!ensureDescriptionEdit()) return;
+    const url = prompt('Link URL');
+    if (!url) return;
+    const clean = safeUrl(url);
+    if (!clean || !/^https?:/i.test(clean)) return alert('Please use an http or https URL.');
+    replaceSelectionInDescription('[', `](${clean})`, 'link text');
+    return;
+  }
+  if (action === 'image') {
+    if (!ensureDescriptionEdit()) return;
+    const url = prompt('Image URL');
+    if (!url) return;
+    const clean = safeUrl(url);
+    if (!clean || !/^https?:/i.test(clean)) return alert('Please use an http or https image URL.');
+    const alt = prompt('Image alt text', 'image') || 'image';
+    insertAtDescriptionCursor(`![${alt.replace(/[\[\]()]/g, '').trim() || 'image'}](${clean})`);
+  }
 }
 
 function removeOrDeleteCurrentItem() {
@@ -943,11 +1630,12 @@ function removeOrDeleteCurrentItem() {
   if (!item) return;
   if (item.tierId) {
     removeItemToPool(item);
-    closeModal();
     render();
+    renderDetailPanel();
   } else {
     deleteItem(item.id);
-    closeModal();
+    currentItemId = null;
+    renderDetailPanel();
   }
 }
 
@@ -1099,7 +1787,11 @@ document.addEventListener('click', e => {
     return;
   }
   const chip = e.target.closest('.item-chip');
-  if (chip) openModal(chip.dataset.itemId);
+  if (chip) {
+    selectedItemIds = new Set([chip.dataset.itemId]);
+    renderSelection();
+    openModal(chip.dataset.itemId);
+  }
 });
 
 els.tiers.addEventListener('dragover', e => {
@@ -1122,11 +1814,15 @@ els.pool.addEventListener('drop', dropOnPool);
 
 els.modal.addEventListener('click', e => { if (e.target === els.modal) closeModal(); });
 $('modal-close').addEventListener('click', closeModal);
-$('edit-btn').addEventListener('click', switchToEdit);
-$('cancel-edit-btn').addEventListener('click', () => { els.viewMode.hidden = false; els.editMode.hidden = true; });
-$('save-edit-btn').addEventListener('click', saveEdit);
-$('delete-edit-btn').addEventListener('click', () => { if (currentItemId) deleteItem(currentItemId); closeModal(); });
-els.removeDelete.addEventListener('click', removeOrDeleteCurrentItem);
+els.detailTitleDisplay.addEventListener('click', beginTitleEdit);
+els.detailTitleDisplay.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); beginTitleEdit(); } });
+els.detailTitleEdit.addEventListener('blur', finishTitleEdit);
+els.detailTitleEdit.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); finishTitleEdit(); } });
+els.detailDescDisplay.addEventListener('click', beginDescriptionEdit);
+els.detailDescDisplay.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); beginDescriptionEdit(); } });
+els.detailDescEdit.addEventListener('input', syncDescriptionDraft);
+els.detailDescEdit.addEventListener('blur', finishDescriptionEdit);
+els.detailRemoveDelete.addEventListener('click', removeOrDeleteCurrentItem);
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
 render();
