@@ -130,6 +130,13 @@ header {
 .controls-panel label { color: var(--text2); font-size: 12px; }
 .slider-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
 input[type="range"] { width: 100%; }
+.duplicate-error {
+  min-height: 16px;
+  color: var(--danger);
+  font-size: 12px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
 .add-item-row input, .add-item-row textarea {
   width: 100%;
   padding: 7px 10px;
@@ -223,6 +230,7 @@ input[type="range"] { width: 100%; }
 .tier-items-cell .item-chip {
   position: absolute;
   z-index: 3;
+  transform: translate(-50%, -50%);
   max-width: 220px;
   padding: 3px 6px;
   border: 1px solid transparent;
@@ -242,8 +250,11 @@ input[type="range"] { width: 100%; }
 }
 .unplaced-pool .item-chip {
   position: relative;
-  display: block;
-  padding: 5px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 8px 5px 10px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 4px;
@@ -251,8 +262,38 @@ input[type="range"] { width: 100%; }
   font-size: 14px;
 }
 .unplaced-pool .item-chip:hover { background: var(--surface2); border-color: var(--border2); }
-.unplaced-pool .item-chip-text { max-width: 210px; text-align: left; }
-.item-chip-del { display: none; }
+.unplaced-pool .item-chip-text { max-width: 190px; text-align: left; }
+.item-chip-del {
+  display: none;
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  color: var(--text3);
+  background: transparent;
+  border: 0;
+  border-radius: 3px;
+  font-size: 15px;
+  line-height: 1;
+}
+.unplaced-pool .item-chip-del { display: flex; opacity: 0; }
+.unplaced-pool .item-chip:hover .item-chip-del,
+.unplaced-pool .item-chip:focus-within .item-chip-del { opacity: 1; }
+.unplaced-pool .item-chip-del:hover { color: var(--danger); background: rgba(127,34,34,.2); }
+.drag-ghost {
+  position: fixed;
+  top: -200px;
+  left: -200px;
+  z-index: -1;
+  pointer-events: none;
+  color: #fff;
+  font-weight: 900;
+  line-height: 1.12;
+  text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 3px 4px rgba(0,0,0,.9);
+  white-space: nowrap;
+}
 
 .modal-overlay {
   position: fixed;
@@ -350,7 +391,8 @@ input[type="range"] { width: 100%; }
 
     <div class="add-item-row">
       <h3>Add Item</h3>
-      <input type="text" id="new-item-name" placeholder="Item name..." maxlength="80">
+      <input type="text" id="new-item-name" placeholder="Item name..." maxlength="80" aria-describedby="add-item-error">
+      <div class="duplicate-error" id="add-item-error" aria-live="polite"></div>
       <textarea id="new-item-desc" placeholder="Description (optional) shown on hover/click..."></textarea>
       <button class="btn primary" id="add-item-btn">Add Item</button>
     </div>
@@ -416,11 +458,12 @@ let currentItemId = null;
 let dragItemId = null;
 let dragOffsetX = 0;
 let dragOffsetY = 0;
+let dragGhost = null;
 
 const $ = id => document.getElementById(id);
 const els = {
   title: $('chart-title'), file: $('file-input'), pool: $('unplaced-pool'), tiers: $('tiers-container'), wrapper: $('iceberg-wrapper'),
-  entrySize: $('entry-size'), entrySizeValue: $('entry-size-value'), newName: $('new-item-name'), newDesc: $('new-item-desc'),
+  entrySize: $('entry-size'), entrySizeValue: $('entry-size-value'), newName: $('new-item-name'), newDesc: $('new-item-desc'), addError: $('add-item-error'),
   modal: $('modal-overlay'), viewMode: $('modal-view-mode'), editMode: $('modal-edit-mode'), modalTitle: $('modal-title'), modalTier: $('modal-tier'), modalDesc: $('modal-desc-text'),
   modalEditName: $('modal-edit-name'), modalEditDesc: $('modal-edit-desc'), removeDelete: $('modal-remove-delete-btn')
 };
@@ -431,6 +474,24 @@ function uid() {
 
 function clamp(num, min, max) {
   return Math.min(Math.max(num, min), max);
+}
+
+function normalizeName(name) {
+  return String(name || '').trim().toLowerCase();
+}
+
+function findDuplicateName(name, excludeId = null) {
+  const normalized = normalizeName(name);
+  return state.items.find(item => item.id !== excludeId && normalizeName(item.name) === normalized);
+}
+
+function showAddError(message = '') {
+  els.addError.textContent = message;
+}
+
+function clearDragGhost() {
+  if (dragGhost) dragGhost.remove();
+  dragGhost = null;
 }
 
 function tierGridTemplate() {
@@ -534,18 +595,37 @@ function makeChip(item, itemIndex = 0) {
   text.className = 'item-chip-text';
   text.textContent = item.name;
   chip.appendChild(text);
+
+  if (!item.tierId) {
+    const del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'item-chip-del';
+    del.dataset.itemId = item.id;
+    del.setAttribute('aria-label', `Delete ${item.name}`);
+    del.textContent = '×';
+    chip.appendChild(del);
+  }
+
   return chip;
 }
 
 function addItem() {
   const name = els.newName.value.trim();
   if (!name) {
+    showAddError('');
     els.newName.focus();
+    return;
+  }
+  if (findDuplicateName(name)) {
+    showAddError(`${name} already exists!`);
+    els.newName.focus();
+    els.newName.select();
     return;
   }
   state.items.push({ id: uid(), name, description: els.newDesc.value.trim(), tierId: null });
   els.newName.value = '';
   els.newDesc.value = '';
+  showAddError('');
   els.newName.focus();
   renderPool();
 }
@@ -567,15 +647,33 @@ function deleteItem(id) {
 }
 
 function setDragItemFromEvent(e) {
+  if (e.target.closest('.item-chip-del')) {
+    e.preventDefault();
+    return null;
+  }
   const chip = e.target.closest('.item-chip');
   if (!chip) return null;
   dragItemId = chip.dataset.itemId;
+  const item = state.items.find(i => i.id === dragItemId);
   const rect = chip.getBoundingClientRect();
-  dragOffsetX = e.clientX - rect.left;
-  dragOffsetY = e.clientY - rect.top;
+  if (item?.tierId) {
+    dragOffsetX = e.clientX - rect.left;
+    dragOffsetY = e.clientY - rect.top;
+  } else {
+    dragOffsetX = rect.width / 2;
+    dragOffsetY = rect.height / 2;
+  }
   e.dataTransfer.effectAllowed = 'move';
   e.dataTransfer.setData('text/plain', dragItemId);
-  e.dataTransfer.setDragImage?.(chip, dragOffsetX, dragOffsetY);
+
+  clearDragGhost();
+  dragGhost = document.createElement('div');
+  dragGhost.className = 'drag-ghost';
+  dragGhost.style.fontSize = item?.tierId ? 'var(--entry-size)' : '14px';
+  dragGhost.textContent = item?.name || chip.textContent.trim();
+  document.body.appendChild(dragGhost);
+  e.dataTransfer.setDragImage?.(dragGhost, 0, 0);
+
   setTimeout(() => chip.classList.add('dragging'), 0);
   return chip;
 }
@@ -594,17 +692,27 @@ function dropOnTier(e, tierId) {
   const chip = document.querySelector(`.item-chip[data-item-id="${CSS.escape(dragItemId)}"]`);
   const chipWidth = chip?.offsetWidth || 120;
   const chipHeight = chip?.offsetHeight || 28;
-  const x = clamp(e.clientX - rect.left - dragOffsetX, 0, Math.max(0, rect.width - chipWidth));
-  const y = clamp(e.clientY - rect.top - dragOffsetY, 0, Math.max(0, rect.height - chipHeight));
+  const centerX = clamp(
+    e.clientX - rect.left - dragOffsetX + chipWidth / 2,
+    chipWidth / 2,
+    Math.max(chipWidth / 2, rect.width - chipWidth / 2)
+  );
+  const centerY = clamp(
+    e.clientY - rect.top - dragOffsetY + chipHeight / 2,
+    chipHeight / 2,
+    Math.max(chipHeight / 2, rect.height - chipHeight / 2)
+  );
 
   item.tierId = tierId;
   const tier = state.tiers.find(t => t.id === tierId);
   item.lastTierId = tierId;
   item.lastTierLabel = tier?.label || "";
-  item.xPct = rect.width ? x / rect.width * 100 : 0;
-  item.yPct = rect.height ? y / rect.height * 100 : 0;
+  item.xPct = rect.width ? centerX / rect.width * 100 : 50;
+  item.yPct = rect.height ? centerY / rect.height * 100 : 50;
+  item.positionMode = "center";
 
   dragItemId = null;
+  clearDragGhost();
   render();
 }
 function dropOnPool(e) {
@@ -614,6 +722,7 @@ function dropOnPool(e) {
   const item = state.items.find(i => i.id === dragItemId);
   if (item) removeItemToPool(item);
   dragItemId = null;
+  clearDragGhost();
   render();
 }
 
@@ -660,6 +769,12 @@ function saveEdit() {
   const item = state.items.find(i => i.id === currentItemId);
   const name = els.modalEditName.value.trim();
   if (!item || !name) return;
+  if (findDuplicateName(name, item.id)) {
+    alert(`${name} already exists!`);
+    els.modalEditName.focus();
+    els.modalEditName.select();
+    return;
+  }
   item.name = name;
   item.description = els.modalEditDesc.value.trim();
   closeModal();
@@ -743,6 +858,7 @@ $('export-btn').addEventListener('click', exportImage);
 els.file.addEventListener('change', loadState);
 $('add-item-btn').addEventListener('click', addItem);
 els.newName.addEventListener('keydown', e => { if (e.key === 'Enter') addItem(); });
+els.newName.addEventListener('input', () => showAddError(''));
 els.entrySize.addEventListener('input', e => {
   state.entryFontSize = Number(e.target.value);
   applyEntrySize();
@@ -755,8 +871,17 @@ els.tiers.addEventListener('input', e => {
 });
 
 document.addEventListener('dragstart', e => { setDragItemFromEvent(e); });
-document.addEventListener('dragend', e => { e.target.closest('.item-chip')?.classList.remove('dragging'); });
+document.addEventListener('dragend', e => {
+  e.target.closest('.item-chip')?.classList.remove('dragging');
+  clearDragGhost();
+});
 document.addEventListener('click', e => {
+  const deleteButton = e.target.closest('.item-chip-del');
+  if (deleteButton) {
+    e.stopPropagation();
+    deleteItem(deleteButton.dataset.itemId);
+    return;
+  }
   const chip = e.target.closest('.item-chip');
   if (chip) openModal(chip.dataset.itemId);
 });
