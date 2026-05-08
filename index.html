@@ -3013,86 +3013,435 @@ body.entry-pick-mode .item-chip.pick-target {
 
 
 
-/* V84 pick-mode opacity dimming */
-body.entry-pick-mode .item-chip.entry-pick-muted {
-  opacity: .6 !important;
+
+
+/* V100 stable baseline cleanup
+   Consolidates the late-stage layout, menu, sidebar, and pick-mode overrides.
+   Keep new visual changes below this block unless they are promoted into core CSS. */
+.layout { transition: filter .16s ease; }
+body.app-menu-open .layout { filter: blur(.55px); }
+
+/* App menu panels */
+.app-menu-panel {
+  background: rgba(17,24,39,.78) !important;
+  border-color: rgba(100,160,255,.28) !important;
+  box-shadow: 0 16px 44px rgba(0,0,0,.54) !important;
+  backdrop-filter: blur(18px) saturate(1.08) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(1.08) !important;
 }
-body.entry-pick-mode .item-chip.pick-target,
-body.entry-pick-mode .item-chip.entry-pick-active-target,
-body.entry-pick-mode .item-chip.fluid-dragging {
+.app-menu-panel::before { background: rgba(17,24,39,.78) !important; }
+.app-menu-panel.file-panel,
+.app-menu-panel.display-panel { width: 245px !important; }
+.menu-section-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--text3);
+}
+.menu-section-title span[aria-hidden="true"] {
+  width: 24px;
+  color: inherit;
+  font-family: var(--mono);
+  font-weight: 900;
+  text-align: center;
+}
+
+/* Header */
+header {
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr) var(--detail-w) !important;
+  align-items: center !important;
+  column-gap: 18px !important;
+  overflow: visible !important;
+}
+.header-left {
+  justify-self: start !important;
+  min-width: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+}
+.site-title {
+  justify-self: center !important;
+  min-width: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 12px !important;
+  color: #fff !important;
+  font-size: 34px !important;
+  line-height: 1 !important;
+  font-weight: 900 !important;
+  text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 3px 4px rgba(0,0,0,.9) !important;
+  pointer-events: none !important;
+}
+.site-title svg {
+  width: 34px !important;
+  height: 34px !important;
+  flex: 0 0 auto !important;
+}
+.header-spacer { min-width: 0 !important; }
+
+/* Header hamburger */
+.header-menu-group {
+  width: 58px !important;
+  height: 48px !important;
+  padding: 4px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: rgba(30,45,69,.36) !important;
+  border: 1px solid rgba(100,160,255,.18) !important;
+  border-radius: 15px !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.025) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+.header-menu-group::before,
+.header-menu-group #display-menu,
+.logo .header-menu + .header-menu::before { display: none !important; content: none !important; }
+.header-menu-group #file-menu {
+  position: relative !important;
+  width: 48px !important;
+  height: 38px !important;
+  min-width: 48px !important;
+  min-height: 38px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.logo .file-menu-toggle {
+  width: 48px !important;
+  min-width: 48px !important;
+  max-width: 48px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: rgba(232,238,248,.84) !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  outline: 0 !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  text-shadow: none !important;
+}
+.logo .file-menu-toggle::before {
+  content: '' !important;
+  display: block !important;
+  width: 25px !important;
+  height: 18px !important;
+  margin: 0 !important;
+  background:
+    linear-gradient(currentColor, currentColor) left top / 25px 4px no-repeat,
+    linear-gradient(currentColor, currentColor) left 7px / 25px 4px no-repeat,
+    linear-gradient(currentColor, currentColor) left 14px / 25px 4px no-repeat !important;
+  transform: translateY(-1px) !important;
+}
+.logo .file-menu-toggle:hover,
+.logo .file-menu-toggle:focus-visible,
+.logo #file-menu[open] > .file-menu-toggle {
+  color: var(--remove) !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  outline: 0 !important;
+}
+.app-menu-panel.file-panel { top: calc(100% + 12px) !important; }
+
+/* Sidebar collapse buttons */
+.sidebar { transition: flex-basis .2s cubic-bezier(.2,.8,.2,1), width .2s cubic-bezier(.2,.8,.2,1), padding .2s cubic-bezier(.2,.8,.2,1); }
+.sidebar.collapsed {
+  flex-basis: 54px !important;
+  width: 54px !important;
+  padding: 12px 8px !important;
+  opacity: .94 !important;
+}
+.sidebar.collapsed > :not(.sidebar-collapse-toggle) { display: none !important; }
+.sidebar-collapse-toggle,
+.detail-collapse-toggle {
+  width: 34px !important;
+  min-width: 34px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  flex: 0 0 34px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  color: rgba(205,218,238,.54) !important;
+  background: rgba(100,160,255,.022) !important;
+  border: 1px solid rgba(100,160,255,.09) !important;
+  border-radius: 999px !important;
+  box-shadow: none !important;
+  font-family: var(--font) !important;
+  font-size: 20px !important;
+  line-height: 1 !important;
+  opacity: .52 !important;
+  transition: opacity .15s ease, color .15s ease, background .15s ease, border-color .15s ease, transform .15s ease !important;
+}
+.sidebar-collapse-toggle:hover,
+.sidebar-collapse-toggle:focus-visible,
+.detail-collapse-toggle:hover,
+.detail-collapse-toggle:focus-visible {
+  opacity: .86 !important;
+  color: rgba(255,255,255,.9) !important;
+  background: rgba(74,158,255,.085) !important;
+  border-color: rgba(100,160,255,.24) !important;
+  outline: 0 !important;
+}
+.sidebar-collapse-toggle:focus:not(:focus-visible),
+.detail-collapse-toggle:focus:not(:focus-visible) {
+  opacity: .52 !important;
+  color: rgba(205,218,238,.54) !important;
+  background: rgba(100,160,255,.022) !important;
+  border-color: rgba(100,160,255,.09) !important;
+  outline: 0 !important;
+}
+.sidebar-collapse-toggle { margin: auto 0 0 auto !important; z-index: 13 !important; }
+.sidebar.collapsed .sidebar-collapse-toggle { margin: auto auto 0 !important; }
+.detail-collapse-toggle { margin: auto auto 0 0 !important; }
+.detail-sidebar.collapsed .detail-collapse-toggle { margin: auto auto 0 !important; }
+
+/* Floating display menu */
+.sidebar-display-menu { display: none !important; }
+.floating-display-menu {
+  position: fixed !important;
+  left: calc(var(--sidebar-w) + 16px) !important;
+  bottom: 18px !important;
+  z-index: 60 !important;
+  width: auto !important;
+  height: auto !important;
+  min-width: 0 !important;
+  display: block !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  transition: left .2s cubic-bezier(.2,.8,.2,1), opacity .15s ease !important;
+}
+.sidebar.collapsed + .floating-display-menu { left: 70px !important; }
+.floating-display-menu summary { list-style: none !important; }
+.floating-display-menu summary::-webkit-details-marker { display: none !important; }
+.floating-display-menu .display-menu-toggle {
+  width: 44px !important;
+  min-width: 44px !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: rgba(232,238,248,.76) !important;
+  background: rgba(17,24,39,.64) !important;
+  border: 1px solid rgba(100,160,255,.22) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 24px rgba(0,0,0,.26), inset 0 1px 0 rgba(255,255,255,.025) !important;
+  font-family: var(--mono) !important;
+  font-size: 14px !important;
+  font-weight: 900 !important;
+  letter-spacing: .015em !important;
+  line-height: 1 !important;
+  text-shadow: none !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+.floating-display-menu .display-menu-toggle:hover,
+.floating-display-menu .display-menu-toggle:focus-visible,
+.floating-display-menu[open] > .display-menu-toggle {
+  color: var(--remove) !important;
+  background: rgba(30,45,69,.78) !important;
+  border-color: rgba(100,160,255,.38) !important;
+  outline: 0 !important;
+}
+.floating-display-menu .display-panel {
+  position: absolute !important;
+  left: 0 !important;
+  right: auto !important;
+  bottom: calc(100% + 12px) !important;
+  top: auto !important;
+  width: 245px !important;
+}
+.floating-display-menu .display-panel::before {
+  top: auto !important;
+  bottom: -7px !important;
+  left: 14px !important;
+  right: auto !important;
+  border-left: 0 !important;
+  border-top: 0 !important;
+  border-right: 1px solid rgba(100,160,255,.28) !important;
+  border-bottom: 1px solid rgba(100,160,255,.28) !important;
+}
+
+/* Right sidebar title and About placement */
+.sidebar-chart-title-row {
+  flex: 0 0 auto !important;
+  padding: 0 2px 2px !important;
+}
+.sidebar-chart-title-row #chart-title {
+  width: 100% !important;
+  height: auto !important;
+  min-height: 42px !important;
+  padding: 0 4px 7px !important;
+  color: #fff !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(100,160,255,.18) !important;
+  outline: 0 !important;
+  font-size: 25px !important;
+  line-height: 1.1 !important;
+  font-weight: 900 !important;
+  text-align: left !important;
+  text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 3px 4px rgba(0,0,0,.9) !important;
+}
+.sidebar-chart-title-row #chart-title:focus { border-bottom-color: var(--accent) !important; }
+.detail-sidebar.collapsed .sidebar-chart-title-row { display: none !important; }
+.detail-placeholder-about {
+  display: none;
+  width: 100%;
+  min-height: 36px;
+  margin: -2px 0 0;
+  align-items: center;
+  justify-content: center;
+  color: var(--text2);
+  background: rgba(30,45,69,.45);
+  border: 1px solid rgba(100,160,255,.18);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  text-shadow: none;
+}
+.detail-placeholder.active + .detail-placeholder-about { display: inline-flex; }
+.detail-placeholder-about:hover,
+.detail-placeholder-about:focus-visible {
+  color: #fff;
+  background: rgba(36,52,82,.64);
+  border-color: rgba(100,160,255,.3);
+  outline: 0;
+}
+.detail-sidebar.collapsed .detail-placeholder-about { display: none !important; }
+
+/* Search and related-entry pick dimming */
+.search-lines { display: none !important; }
+body.entry-pick-mode .search-lines,
+body.entry-link-hover-line .search-lines {
+  display: block !important;
+  z-index: 9997 !important;
   opacity: 1 !important;
 }
-
-/* V85 pick-mode dimming hard override */
-html.entry-pick-mode .item-chip,
-body.entry-pick-mode .item-chip,
-body[data-entry-pick-mode="true"] .item-chip,
-.iceberg-wrapper.entry-pick-mode .item-chip,
-.unplaced-pool.entry-pick-mode .item-chip {
-  opacity: .6 !important;
-  filter: opacity(60%) !important;
-}
-html.entry-pick-mode .item-chip.pick-target,
-body.entry-pick-mode .item-chip.pick-target,
-body[data-entry-pick-mode="true"] .item-chip.pick-target,
-.iceberg-wrapper.entry-pick-mode .item-chip.pick-target,
-.unplaced-pool.entry-pick-mode .item-chip.pick-target,
-html.entry-pick-mode .item-chip.entry-pick-active-target,
-body.entry-pick-mode .item-chip.entry-pick-active-target,
-body[data-entry-pick-mode="true"] .item-chip.entry-pick-active-target,
-.iceberg-wrapper.entry-pick-mode .item-chip.entry-pick-active-target,
-.unplaced-pool.entry-pick-mode .item-chip.entry-pick-active-target {
-  opacity: 1 !important;
-  filter: opacity(100%) drop-shadow(0 0 6px rgba(255,231,106,.32)) !important;
-}
-
-
-/* V86 pick-mode dimming uses the proven search opacity path */
+body.entry-pick-mode .iceberg-wrapper,
+body.entry-pick-mode .unplaced-pool { cursor: crosshair; }
+body.entry-pick-mode .item-chip { outline: none !important; outline-offset: 0 !important; }
 body.entry-pick-mode .tier-items-cell.entry-pick-dim-cell .item-chip,
-body.entry-pick-mode .unplaced-pool.entry-pick-dim-cell .item-chip {
-  opacity: .6 !important;
-}
+body.entry-pick-mode .unplaced-pool.entry-pick-dim-cell .item-chip { opacity: .6 !important; }
 body.entry-pick-mode .tier-items-cell.entry-pick-dim-cell .item-chip.search-match,
 body.entry-pick-mode .tier-items-cell.entry-pick-dim-cell .item-chip.entry-pick-active-target,
-body.entry-pick-mode .unplaced-pool.entry-pick-dim-cell .item-chip.entry-pick-active-target {
-  opacity: 1 !important;
-}
+body.entry-pick-mode .unplaced-pool.entry-pick-dim-cell .item-chip.entry-pick-active-target,
+body.entry-pick-mode .item-chip.fluid-dragging { opacity: 1 !important; }
+body.entry-pick-mode .item-chip.entry-pick-active-target,
+body.entry-pick-mode .item-chip.pick-target { filter: drop-shadow(0 0 6px rgba(255,231,106,.32)); }
 body.entry-pick-mode .item-chip.entry-pick-active-target .item-chip-text,
-body.entry-pick-mode .item-chip.pick-target .item-chip-text {
-  color: var(--remove) !important;
+body.entry-pick-mode .item-chip.pick-target .item-chip-text { color: var(--remove) !important; }
+
+@media (max-width: 1120px) {
+  header { grid-template-columns: 190px minmax(0, 1fr) 190px !important; }
+  .site-title { font-size: 28px !important; }
+  .site-title svg { width: 30px !important; height: 30px !important; }
 }
+
+
+/* V101 autosave + restore prompt */
+.autosave-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10002;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(0,0,0,.48);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+.autosave-modal[hidden] { display: none !important; }
+.autosave-card {
+  width: min(92vw, 440px);
+  padding: 20px 22px 22px;
+  color: var(--text2);
+  background: rgba(17,24,39,.86);
+  border: 1px solid rgba(100,160,255,.28);
+  border-radius: 10px;
+  box-shadow: 0 20px 70px rgba(0,0,0,.62);
+  backdrop-filter: blur(16px) saturate(1.08);
+  -webkit-backdrop-filter: blur(16px) saturate(1.08);
+  line-height: 1.45;
+}
+.autosave-card h2 {
+  margin: 0 0 9px;
+  color: #fff;
+  font-size: 22px;
+  line-height: 1.1;
+  text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 3px 4px rgba(0,0,0,.9);
+}
+.autosave-card p {
+  margin: 0 0 12px;
+  font-size: 14px;
+}
+.autosave-meta {
+  margin: 0 0 14px;
+  color: var(--text3);
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.35;
+}
+.autosave-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+.autosave-actions .btn {
+  min-height: 38px;
+}
+.autosave-actions .btn.subtle {
+  color: var(--text2);
+  background: rgba(30,45,69,.46);
+  border-color: rgba(100,160,255,.18);
+}
+.autosave-actions .btn.subtle:hover,
+.autosave-actions .btn.subtle:focus {
+  color: #fff;
+  background: rgba(36,52,82,.62);
+  border-color: rgba(100,160,255,.34);
+}
+.autosave-status {
+  min-height: 0;
+  margin-top: 10px;
+  color: var(--text3);
+  font-size: 12px;
+  line-height: 1.35;
+}
+.autosave-status.warn { color: var(--remove); }
 
 </style>
 </head>
 <body>
 <header>
-  <div class="logo" aria-label="Iceberg">
-  <details class="header-menu" id="app-menu">
-    <summary class="btn menu-toggle" aria-label="Open menu" title="Menu">☰</summary>
-    <div class="app-menu-panel" role="group" aria-label="App menu">
-      <button class="menu-item" id="save-btn" type="button">Save JSON</button>
-      <button class="menu-item" id="load-btn" type="button">Load JSON</button>
-      <button class="menu-item primary" id="export-btn" type="button">Export PNG</button>
-      <div class="menu-separator"></div>
-      <h3>Display</h3>
-      <label for="entry-size">Text size</label>
-      <div class="slider-row">
-        <input type="range" id="entry-size" min="10" max="24" step="1" value="14">
-        <span id="entry-size-value">14px</span>
-      </div>
-      <label for="entry-font">Font</label>
-      <select id="entry-font">
-        <option value="Georgia, serif">Georgia</option>
-        <option value="Arial Black, Arial, sans-serif">Arial Black</option>
-        <option value="Verdana, Geneva, sans-serif">Verdana</option>
-        <option value="Trebuchet MS, Arial, sans-serif">Trebuchet</option>
-        <option value="Courier New, monospace">Courier</option>
-        <option value="Impact, Haettenschweiler, sans-serif">Impact</option>
-      </select>
-      <div class="menu-separator"></div>
-      <button class="menu-item" id="about-btn" type="button">About</button>
+  <div class="logo header-left" aria-label="Menus">
+    <div class="header-menu-group" aria-label="Header menus">
+      <details class="header-menu" id="file-menu">
+        <summary class="btn menu-toggle file-menu-toggle" aria-label="Open menu" title="Menu">☰</summary>
+        <div class="app-menu-panel file-panel" role="group" aria-label="File actions menu">
+          <button class="menu-item" id="save-btn" type="button">Save JSON</button>
+          <button class="menu-item" id="load-btn" type="button">Load JSON</button>
+          <button class="menu-item primary" id="export-btn" type="button">Export PNG</button>
+        </div>
+      </details>
     </div>
-  </details>
+  </div>
+  <div class="site-title" aria-label="Iceberg">
     <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <polygon points="14,2 22,10 20,10 20,12 8,12 8,10 6,10" fill="rgba(200,230,255,.7)"/>
       <rect x="9" y="12" width="10" height="4" fill="rgba(100,180,255,.4)"/>
@@ -3100,11 +3449,9 @@ body.entry-pick-mode .item-chip.pick-target .item-chip-text {
       <rect x="5" y="20" width="18" height="4" fill="rgba(20,80,180,.5)"/>
       <rect x="3" y="24" width="22" height="3" fill="rgba(10,40,120,.6)" rx="1"/>
     </svg>
-    Iceberg
+    <span>Iceberg</span>
   </div>
-  <div class="title-area">
-    <input type="text" id="chart-title" value="My Iceberg" placeholder="Iceberg title..." spellcheck="false">
-  </div>
+  <div class="header-spacer" aria-hidden="true"></div>
   <input type="file" id="file-input" accept=".json,application/json">
 </header>
 
@@ -3120,8 +3467,32 @@ body.entry-pick-mode .item-chip.pick-target .item-chip-text {
     <h3>Unplaced</h3>
     <div class="unplaced-pool" id="unplaced-pool"></div>
 
+    <button class="sidebar-collapse-toggle" id="sidebar-collapse-toggle" type="button" aria-expanded="true" title="Hide entry tray">‹</button>
+
 
   </aside>
+
+
+      <details class="header-menu floating-display-menu" id="display-menu">
+        <summary class="btn menu-toggle display-menu-toggle" aria-label="Open display menu" title="Display">Aa</summary>
+        <div class="app-menu-panel display-panel" role="group" aria-label="Display menu">
+          <h3 class="menu-section-title"><span aria-hidden="true">Aa</span><span>Display</span></h3>
+          <label for="entry-size">Text size</label>
+          <div class="slider-row">
+            <input type="range" id="entry-size" min="10" max="24" step="1" value="14">
+            <span id="entry-size-value">14px</span>
+          </div>
+          <label for="entry-font">Font</label>
+          <select id="entry-font">
+            <option value="Georgia, serif">Georgia</option>
+            <option value="Arial Black, Arial, sans-serif">Arial Black</option>
+            <option value="Verdana, Geneva, sans-serif">Verdana</option>
+            <option value="Trebuchet MS, Arial, sans-serif">Trebuchet</option>
+            <option value="Courier New, monospace">Courier</option>
+            <option value="Impact, Haettenschweiler, sans-serif">Impact</option>
+          </select>
+        </div>
+      </details>
 
   <section class="iceberg-area">
     <div class="iceberg-wrapper" id="iceberg-wrapper">
@@ -3130,6 +3501,9 @@ body.entry-pick-mode .item-chip.pick-target .item-chip-text {
   </section>
 
   <aside class="detail-sidebar" id="detail-sidebar" aria-label="Entry details">
+    <div class="sidebar-chart-title-row">
+      <input type="text" id="chart-title" value="My Iceberg" placeholder="Iceberg title..." spellcheck="false">
+    </div>
     <div class="detail-search-panel iceberg-search-panel">
       <label for="iceberg-search">Search Iceberg</label>
       <input type="search" id="iceberg-search" placeholder="Find placed entries..." autocomplete="off" spellcheck="false">
@@ -3144,6 +3518,7 @@ body.entry-pick-mode .item-chip.pick-target .item-chip-text {
         <li>Add notes, images, and subtitles after selecting an entry.</li>
       </ul>
     </div>
+    <button class="btn detail-placeholder-about" id="about-btn" type="button">About</button>
     <div class="detail-heading" id="detail-heading" hidden>
       <div class="detail-title-display editable-display" id="detail-title-display" role="button" tabindex="0" title="Click to edit title"></div>
       <textarea class="detail-title-edit" id="detail-title-edit" maxlength="80" rows="2" placeholder="Entry title..." hidden></textarea>
@@ -3227,6 +3602,20 @@ body.entry-pick-mode .item-chip.pick-target .item-chip-text {
     <p>The about text is built into the page. It is not saved to or loaded from your JSON file.</p>
   </div>
 </div>
+
+<div class="autosave-modal" id="autosave-modal" hidden role="dialog" aria-modal="true" aria-label="Restore autosave">
+  <div class="autosave-card">
+    <h2>Restore autosave?</h2>
+    <p>A local autosave was found for this browser. Restore it, start fresh, or keep working without changing it.</p>
+    <div class="autosave-meta" id="autosave-meta"></div>
+    <div class="autosave-actions">
+      <button class="btn primary" id="autosave-restore-btn" type="button">Restore autosave</button>
+      <button class="btn" id="autosave-fresh-btn" type="button">Start fresh</button>
+      <button class="btn subtle" id="autosave-dismiss-btn" type="button">Dismiss</button>
+    </div>
+    <div class="autosave-status" id="autosave-status" aria-live="polite"></div>
+  </div>
+</div>
 <div class="entry-preview" id="entry-preview" hidden></div>
 
 <script>
@@ -3274,21 +3663,27 @@ let pendingEntryLinkSelection = null;
 let descriptionToolErrorTimer = null;
 let descriptionToolErrorPoint = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
 let switchingDescriptionMode = false;
+let suppressDescriptionBlur = false;
 let entryPickMode = false;
 let entryPickLinePoint = null;
 let entryPickLineTargetId = null;
 let entryPickLineRaf = 0;
 let entryPickOpacityRaf = 0;
+let descriptionEditItemId = null;
 let hoveredInternalLinkEl = null;
 let hoveredInternalLinkTargetId = null;
+let autosaveReady = false;
+let autosaveTimer = 0;
+let autosaveWriteFailed = false;
+let pendingAutosavePayload = null;
 
 const $ = id => document.getElementById(id);
 const els = {
   title: $('chart-title'), file: $('file-input'), pool: $('unplaced-pool'), tiers: $('tiers-container'), wrapper: $('iceberg-wrapper'),
   icebergSearch: $('iceberg-search'), icebergSearchCount: $('iceberg-search-count'), searchLines: $('search-lines'),
-  entrySize: $('entry-size'), entrySizeValue: $('entry-size-value'), entryFont: $('entry-font'), detailSidebar: $('detail-sidebar'), detailCollapse: $('detail-collapse-toggle'), newName: $('new-item-name'), addError: $('add-item-error'),
+  entrySize: $('entry-size'), entrySizeValue: $('entry-size-value'), entryFont: $('entry-font'), leftSidebar: document.querySelector('.sidebar'), leftCollapse: $('sidebar-collapse-toggle'), detailSidebar: $('detail-sidebar'), detailCollapse: $('detail-collapse-toggle'), newName: $('new-item-name'), addError: $('add-item-error'),
   detailCard: $('detail-card'), detailPlaceholder: $('detail-placeholder'), detailHeading: $('detail-heading'), detailTitleDisplay: $('detail-title-display'), detailTitleEdit: $('detail-title-edit'), detailTitleError: $('detail-title-error'), detailTier: $('detail-tier'),
-  detailNeedsVerification: $('detail-needs-verification'), detailVerificationStatic: $('detail-verification-static'), detailEditRow: $('detail-edit-row'), detailEditBtn: $('detail-edit-btn'), detailDoneBtn: $('detail-done-btn'), entryPreview: $('entry-preview'), detailDescDisplay: $('detail-description-display'), detailDescRichEdit: $('detail-description-rich-edit'), detailDescEdit: $('detail-description-edit'), descriptionTools: $('description-tools'), formatBold: $('format-bold-btn'), formatItalic: $('format-italic-btn'), formatCode: $('format-code-btn'), detailLinkUrl: $('detail-link-url-btn'), descriptionSyntaxToggle: $('description-syntax-toggle'), detailLinkEntry: $('detail-link-entry-btn'), detailPickEntry: $('detail-pick-entry-btn'), entryLinkPicker: $('entry-link-picker'), entryLinkSearch: $('entry-link-search'), entryLinkList: $('entry-link-list'), entryLinkHint: $('entry-link-hint'), detailImages: $('description-images'), detailImageUrl: $('detail-image-url'), detailImageFile: $('detail-image-file'), detailAddImage: $('detail-add-image-btn'), detailImageError: $('detail-image-error'), imageManager: $('image-manager'), imageDropZone: $('image-drop-zone'), imageModal: $('image-modal'), imageModalImg: $('image-modal-img'), imageModalCaption: $('image-modal-caption'), imageModalRemove: $('image-modal-remove'), imageModalClose: $('image-modal-close'), detailRemoveDelete: $('detail-remove-delete-btn'), aboutModal: $('about-modal'), aboutBtn: $('about-btn'), aboutClose: $('about-modal-close'), appMenu: $('app-menu')
+  detailNeedsVerification: $('detail-needs-verification'), detailVerificationStatic: $('detail-verification-static'), detailEditRow: $('detail-edit-row'), detailEditBtn: $('detail-edit-btn'), detailDoneBtn: $('detail-done-btn'), entryPreview: $('entry-preview'), detailDescDisplay: $('detail-description-display'), detailDescRichEdit: $('detail-description-rich-edit'), detailDescEdit: $('detail-description-edit'), descriptionTools: $('description-tools'), formatBold: $('format-bold-btn'), formatItalic: $('format-italic-btn'), formatCode: $('format-code-btn'), detailLinkUrl: $('detail-link-url-btn'), descriptionSyntaxToggle: $('description-syntax-toggle'), detailLinkEntry: $('detail-link-entry-btn'), detailPickEntry: $('detail-pick-entry-btn'), entryLinkPicker: $('entry-link-picker'), entryLinkSearch: $('entry-link-search'), entryLinkList: $('entry-link-list'), entryLinkHint: $('entry-link-hint'), detailImages: $('description-images'), detailImageUrl: $('detail-image-url'), detailImageFile: $('detail-image-file'), detailAddImage: $('detail-add-image-btn'), detailImageError: $('detail-image-error'), imageManager: $('image-manager'), imageDropZone: $('image-drop-zone'), imageModal: $('image-modal'), imageModalImg: $('image-modal-img'), imageModalCaption: $('image-modal-caption'), imageModalRemove: $('image-modal-remove'), imageModalClose: $('image-modal-close'), detailRemoveDelete: $('detail-remove-delete-btn'), aboutModal: $('about-modal'), aboutBtn: $('about-btn'), aboutClose: $('about-modal-close'), fileMenu: $('file-menu'), displayMenu: $('display-menu')
 };
 
 function uid() {
@@ -3533,19 +3928,32 @@ function imageFileToDataUrl(file) {
     const reader = new FileReader();
     reader.onerror = () => reject(new Error('Could not read image.'));
     reader.onload = () => {
+      const originalDataUrl = String(reader.result || '');
+      if (!originalDataUrl) {
+        reject(new Error('Could not read image.'));
+        return;
+      }
       const img = new Image();
-      img.onerror = () => reject(new Error('Could not load image.'));
+      img.onerror = () => resolve(originalDataUrl);
       img.onload = () => {
-        const maxSide = 1400;
-        const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.max(1, Math.round(img.width * scale));
-        canvas.height = Math.max(1, Math.round(img.height * scale));
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL('image/jpeg', 0.86));
+        try {
+          const maxSide = 1400;
+          const scale = Math.min(1, maxSide / Math.max(img.width || 1, img.height || 1));
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, Math.round((img.width || 1) * scale));
+          canvas.height = Math.max(1, Math.round((img.height || 1) * scale));
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(originalDataUrl);
+            return;
+          }
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', 0.86) || originalDataUrl);
+        } catch (err) {
+          resolve(originalDataUrl);
+        }
       };
-      img.src = reader.result;
+      img.src = originalDataUrl;
     };
     reader.readAsDataURL(file);
   });
@@ -4053,6 +4461,7 @@ function render() {
   updateIcebergSearchCount();
   scheduleSearchLinesUpdate();
   if (currentItemId) renderDetailPanel();
+  scheduleAutosave();
 }
 
 function renderTiers() {
@@ -4470,6 +4879,7 @@ function renderDetailPanel() {
     if (els.detailDoneBtn) els.detailDoneBtn.hidden = true;
     closeEntryLinkPicker();
     stopEntryPickMode();
+    descriptionEditItemId = null;
     return;
   }
 
@@ -4491,6 +4901,7 @@ function renderDetailPanel() {
   if (els.detailDescRichEdit) els.detailDescRichEdit.hidden = true;
   els.detailDescEdit.hidden = true;
   els.detailCard.classList.remove('description-editing');
+  descriptionEditItemId = null;
   els.detailTier.textContent = tier ? tier.label : (lastTierLabel ? `Last tier: ${lastTierLabel}` : 'Unplaced');
   if (els.detailNeedsVerification) els.detailNeedsVerification.checked = !!item.needsVerification;
   if (els.detailVerificationStatic) els.detailVerificationStatic.hidden = !item.needsVerification;
@@ -4531,6 +4942,24 @@ function hideDetailSidebar(clearCurrent = false) {
     els.detailCollapse.title = 'Show details';
   }
   if (clearCurrent) clearDetailSelection();
+}
+
+function showLeftSidebar() {
+  els.leftSidebar?.classList.remove('collapsed');
+  if (els.leftCollapse) {
+    els.leftCollapse.textContent = '‹';
+    els.leftCollapse.setAttribute('aria-expanded', 'true');
+    els.leftCollapse.title = 'Hide entry tray';
+  }
+}
+
+function hideLeftSidebar() {
+  els.leftSidebar?.classList.add('collapsed');
+  if (els.leftCollapse) {
+    els.leftCollapse.textContent = '›';
+    els.leftCollapse.setAttribute('aria-expanded', 'false');
+    els.leftCollapse.title = 'Show entry tray';
+  }
 }
 
 function openModal(itemId) {
@@ -4944,6 +5373,7 @@ function handleDescriptionShortcut(e) {
 function beginDescriptionEdit() {
   const item = state.items.find(i => i.id === currentItemId);
   if (!item) return;
+  descriptionEditItemId = item.id;
   setRichEditorFromDescription(item.description || '');
   if (els.detailDescEdit) els.detailDescEdit.value = item.description || '';
   els.detailCard.classList.add('description-editing');
@@ -4965,12 +5395,19 @@ function beginDescriptionEdit() {
 }
 
 function finishDescriptionEdit() {
-  const item = state.items.find(i => i.id === currentItemId);
-  if (!item) return;
-  syncDescriptionDraft();
+  if (!els.detailCard?.classList.contains('description-editing')) return;
+  const itemId = descriptionEditItemId || currentItemId;
+  const item = state.items.find(i => i.id === itemId);
+  if (!item) {
+    descriptionEditItemId = null;
+    return;
+  }
+  syncDescriptionDraft(itemId);
   const description = item.description || '';
-  setDescriptionDisplay(description);
-  renderDescriptionImages(item);
+  if (itemId === currentItemId) {
+    setDescriptionDisplay(description);
+    renderDescriptionImages(item);
+  }
   els.detailDescDisplay.hidden = false;
   if (els.detailDescRichEdit) els.detailDescRichEdit.hidden = true;
   if (els.detailDescEdit) els.detailDescEdit.hidden = true;
@@ -4979,14 +5416,16 @@ function finishDescriptionEdit() {
   if (els.detailEditRow) els.detailEditRow.hidden = false;
   if (els.detailEditBtn) els.detailEditBtn.hidden = false;
   if (els.detailDoneBtn) els.detailDoneBtn.hidden = true;
-  if (els.detailVerificationStatic) els.detailVerificationStatic.hidden = !item.needsVerification;
+  if (itemId === currentItemId && els.detailVerificationStatic) els.detailVerificationStatic.hidden = !item.needsVerification;
   showDescriptionToolError('');
   closeEntryLinkPicker();
   stopEntryPickMode();
+  descriptionEditItemId = null;
 }
 
-function syncDescriptionDraft() {
-  const item = state.items.find(i => i.id === currentItemId);
+function syncDescriptionDraft(itemId = descriptionEditItemId || currentItemId) {
+  if (!itemId) return;
+  const item = state.items.find(i => i.id === itemId);
   if (!item) return;
   item.description = getRichEditorMarkdown();
   if (els.detailDescEdit) els.detailDescEdit.value = item.description;
@@ -5142,7 +5581,7 @@ function openInternalEntryLink(link) {
   const target = link?.dataset?.entryId || link?.dataset?.entryTarget;
   const item = findItemByEntryLinkTarget(target);
   if (!item) return;
-  if (!els.detailDescEdit.hidden) finishDescriptionEdit();
+  if (els.detailCard?.classList.contains('description-editing')) finishDescriptionEdit();
   selectedItemIds = item.tierId ? new Set([item.id]) : new Set();
   renderSelection();
   hideHoverPreview();
@@ -5176,6 +5615,145 @@ function removeOrDeleteCurrentItem() {
   }
 }
 
+
+const AUTOSAVE_KEY = 'interactiveIceberg.autosave.v1';
+
+function getAutosaveEls() {
+  return {
+    modal: $('autosave-modal'),
+    meta: $('autosave-meta'),
+    restore: $('autosave-restore-btn'),
+    fresh: $('autosave-fresh-btn'),
+    dismiss: $('autosave-dismiss-btn'),
+    status: $('autosave-status')
+  };
+}
+
+function updateAutosaveStatus(message = '', isWarning = false) {
+  const status = $('autosave-status');
+  if (!status) return;
+  status.textContent = message;
+  status.classList.toggle('warn', !!isWarning);
+}
+
+function getSerializableState() {
+  if (els.title) state.title = els.title.value;
+  state.version = Number(state.version) || 5;
+  normalizeState();
+  return JSON.parse(JSON.stringify(state));
+}
+
+function isMeaningfulAutosave(payload) {
+  const saved = payload?.state;
+  if (!saved || !Array.isArray(saved.items) || !Array.isArray(saved.tiers)) return false;
+  if (saved.items.length) return true;
+  if (String(saved.title || '').trim() && String(saved.title || '').trim() !== 'My Iceberg') return true;
+  if (Number(saved.entryFontSize) && Number(saved.entryFontSize) !== 14) return true;
+  if (saved.entryFontFamily && saved.entryFontFamily !== 'Georgia, serif') return true;
+  return saved.tiers.some((tier, index) => String(tier?.label || '') !== String(DEFAULT_TIERS[index]?.[0] || ''));
+}
+
+function readAutosavePayload() {
+  try {
+    const raw = localStorage.getItem(AUTOSAVE_KEY);
+    if (!raw) return null;
+    const payload = JSON.parse(raw);
+    if (!payload || !payload.state || !Array.isArray(payload.state.items) || !Array.isArray(payload.state.tiers)) return null;
+    return payload;
+  } catch (err) {
+    console.warn('Could not read autosave.', err);
+    return null;
+  }
+}
+
+function formatAutosaveTime(timestamp) {
+  const date = new Date(Number(timestamp) || Date.now());
+  if (Number.isNaN(date.getTime())) return 'Saved time unknown';
+  return `Last autosaved ${date.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}`;
+}
+
+function writeAutosaveNow() {
+  if (!autosaveReady || autosaveWriteFailed) return;
+  try {
+    const payload = {
+      savedAt: Date.now(),
+      state: getSerializableState()
+    };
+    localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(payload));
+    updateAutosaveStatus('');
+  } catch (err) {
+    autosaveWriteFailed = true;
+    updateAutosaveStatus('Autosave paused because browser storage is full. Use Save JSON to back up this iceberg.', true);
+    console.warn('Autosave failed.', err);
+  }
+}
+
+function scheduleAutosave() {
+  if (!autosaveReady || autosaveWriteFailed) return;
+  clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(writeAutosaveNow, 750);
+}
+
+function clearAutosaveStorage() {
+  try {
+    localStorage.removeItem(AUTOSAVE_KEY);
+  } catch (err) {
+    console.warn('Could not clear autosave.', err);
+  }
+}
+
+function hideAutosavePrompt() {
+  const modal = $('autosave-modal');
+  if (modal) modal.hidden = true;
+}
+
+function showAutosavePrompt(payload) {
+  pendingAutosavePayload = payload;
+  const { modal, meta } = getAutosaveEls();
+  if (!modal) return false;
+  if (meta) {
+    const itemCount = payload?.state?.items?.length || 0;
+    const imageCount = (payload?.state?.items || []).reduce((sum, item) => sum + ((item.images || []).length), 0);
+    meta.textContent = `${formatAutosaveTime(payload?.savedAt)} · ${itemCount} entries · ${imageCount} images`;
+  }
+  modal.hidden = false;
+  return true;
+}
+
+function restoreAutosave() {
+  if (!pendingAutosavePayload?.state) return;
+  state = pendingAutosavePayload.state;
+  normalizeState();
+  currentItemId = null;
+  selectedItemIds.clear();
+  hideAutosavePrompt();
+  autosaveReady = true;
+  render();
+  renderDetailPanel();
+  writeAutosaveNow();
+}
+
+function startFreshAutosave() {
+  clearAutosaveStorage();
+  pendingAutosavePayload = null;
+  hideAutosavePrompt();
+  autosaveReady = true;
+  writeAutosaveNow();
+}
+
+function dismissAutosavePrompt() {
+  pendingAutosavePayload = null;
+  hideAutosavePrompt();
+  autosaveReady = true;
+}
+
+function initAutosave() {
+  const payload = readAutosavePayload();
+  if (isMeaningfulAutosave(payload)) return showAutosavePrompt(payload);
+  autosaveReady = true;
+  return false;
+}
+
 function saveState() {
   state.title = els.title.value;
   state.version = Number(state.version) || 4;
@@ -5198,6 +5776,7 @@ function loadState(event) {
       state = loaded;
       normalizeState();
       render();
+      writeAutosaveNow();
     } catch {
       alert('Invalid JSON file.');
     }
@@ -5383,6 +5962,31 @@ function endSelection() {
   selectionStart = null;
 }
 
+
+$('autosave-restore-btn')?.addEventListener('click', e => { e.stopPropagation(); restoreAutosave(); });
+$('autosave-fresh-btn')?.addEventListener('click', e => { e.stopPropagation(); startFreshAutosave(); });
+$('autosave-dismiss-btn')?.addEventListener('click', e => { e.stopPropagation(); dismissAutosavePrompt(); });
+document.addEventListener('input', e => {
+  if (e.target.closest?.('.autosave-modal')) return;
+  scheduleAutosave();
+});
+document.addEventListener('change', e => {
+  if (e.target.closest?.('.autosave-modal')) return;
+  scheduleAutosave();
+});
+document.addEventListener('click', e => {
+  if (e.target.closest?.('.autosave-modal')) return;
+  setTimeout(scheduleAutosave, 0);
+});
+document.addEventListener('drop', e => {
+  if (e.target.closest?.('.autosave-modal')) return;
+  setTimeout(scheduleAutosave, 0);
+});
+document.addEventListener('pointerup', e => {
+  if (e.target.closest?.('.autosave-modal')) return;
+  setTimeout(scheduleAutosave, 0);
+});
+
 els.title.addEventListener('input', e => { state.title = e.target.value; });
 $('save-btn').addEventListener('click', () => { closeAppMenu(); saveState(); });
 $('load-btn').addEventListener('click', () => { closeAppMenu(); els.file.click(); });
@@ -5412,6 +6016,13 @@ els.detailCollapse.addEventListener('click', e => {
   const isCollapsed = els.detailSidebar.classList.contains('collapsed');
   if (isCollapsed) showDetailSidebar();
   else hideDetailSidebar(false);
+});
+
+els.leftCollapse?.addEventListener('click', e => {
+  e.stopPropagation();
+  const isCollapsed = els.leftSidebar?.classList.contains('collapsed');
+  if (isCollapsed) showLeftSidebar();
+  else hideLeftSidebar();
 });
 
 els.tiers.addEventListener('input', e => {
@@ -5575,17 +6186,23 @@ document.addEventListener('selectionchange', () => {
 els.detailEditBtn?.addEventListener('click', beginDescriptionEdit);
 els.detailDoneBtn?.addEventListener('click', finishDescriptionEdit);
 els.detailDescRichEdit?.addEventListener('blur', e => {
-  if (entryPickMode || switchingDescriptionMode) return;
+  if (entryPickMode || switchingDescriptionMode || suppressDescriptionBlur) return;
   const next = e.relatedTarget;
-  if (next === els.detailDescEdit || (next && (next.closest?.('.description-tools') || next.closest?.('.entry-link-actions') || next.closest?.('.entry-link-picker')))) return;
+  if (next === els.detailDescEdit || (next && (next.closest?.('.description-tools') || next.closest?.('.entry-link-actions') || next.closest?.('.entry-link-picker') || next.closest?.('.detail-actions') || next.closest?.('.verification-toggle')))) return;
   finishDescriptionEdit();
 });
 els.detailDescEdit?.addEventListener('blur', e => {
-  if (entryPickMode || switchingDescriptionMode) return;
+  if (entryPickMode || switchingDescriptionMode || suppressDescriptionBlur) return;
   const next = e.relatedTarget;
-  if (next === els.detailDescRichEdit || (next && (next.closest?.('.description-tools') || next.closest?.('.entry-link-actions') || next.closest?.('.entry-link-picker')))) return;
+  if (next === els.detailDescRichEdit || (next && (next.closest?.('.description-tools') || next.closest?.('.entry-link-actions') || next.closest?.('.entry-link-picker') || next.closest?.('.detail-actions') || next.closest?.('.verification-toggle')))) return;
   finishDescriptionEdit();
 });
+function holdDescriptionEditorForControlClick() {
+  suppressDescriptionBlur = true;
+  requestAnimationFrame(() => { suppressDescriptionBlur = false; });
+}
+els.detailNeedsVerification?.closest?.('.verification-toggle')?.addEventListener('mousedown', holdDescriptionEditorForControlClick);
+els.detailNeedsVerification?.addEventListener('mousedown', holdDescriptionEditorForControlClick);
 els.detailNeedsVerification?.addEventListener('change', toggleCurrentVerification);
 els.detailRemoveDelete.addEventListener('click', removeOrDeleteCurrentItem);
 els.detailAddImage?.addEventListener('click', addCurrentImage);
@@ -5642,8 +6259,16 @@ els.imageModal?.addEventListener('click', e => {
   if (e.target === els.imageModal) closeImagePreview();
 });
 
+function headerMenus() {
+  return [els.fileMenu, els.displayMenu].filter(Boolean);
+}
+function syncAppMenuState() {
+  document.body.classList.toggle('app-menu-open', headerMenus().some(menu => menu.open));
+}
+
 function closeAppMenu() {
-  if (els.appMenu) els.appMenu.open = false;
+  headerMenus().forEach(menu => { menu.open = false; });
+  syncAppMenuState();
 }
 function openAboutModal() {
   closeAppMenu();
@@ -5658,15 +6283,19 @@ els.aboutModal?.addEventListener('click', e => {
   if (e.target === els.aboutModal) closeAboutModal();
 });
 document.addEventListener('click', e => {
-  if (els.appMenu?.open && !e.target.closest('#app-menu')) closeAppMenu();
+  if (headerMenus().some(menu => menu.open) && !e.target.closest('.header-menu')) closeAppMenu();
 });
-els.appMenu?.querySelector('summary')?.addEventListener('mousedown', e => {
-  e.preventDefault();
+headerMenus().forEach(menu => {
+  menu.querySelector('summary')?.addEventListener('mousedown', e => { e.preventDefault(); });
+  menu.addEventListener('toggle', () => {
+    if (menu.open) headerMenus().forEach(other => { if (other !== menu) other.open = false; });
+    syncAppMenuState();
+  });
 });
 
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
-  if (els.appMenu?.open) { closeAppMenu(); return; }
+  if (headerMenus().some(menu => menu.open)) { closeAppMenu(); return; }
   if (els.aboutModal && !els.aboutModal.hidden) { closeAboutModal(); return; }
   if (entryPickMode) { stopEntryPickMode(); return; }
   if (els.entryLinkPicker && !els.entryLinkPicker.hidden) { closeEntryLinkPicker(); return; }
@@ -5694,9 +6323,17 @@ window.addEventListener('resize', () => { scheduleSearchLinesUpdate(); if (entry
 window.addEventListener('scroll', () => { scheduleSearchLinesUpdate(); if (entryPickMode) scheduleEntryPickLineUpdate(); }, { passive: true });
 
 showDetailSidebar();
+initAutosave();
 render();
 renderDetailPanel();
 scheduleSearchLinesUpdate();
+
+
+// V96 avoid sticky focus highlight on sidebar retract buttons.
+[els.leftCollapse, els.detailCollapse].filter(Boolean).forEach(btn => {
+  btn.addEventListener('click', () => setTimeout(() => btn.blur(), 0));
+});
+
 </script>
 </body>
 </html>
