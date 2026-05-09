@@ -4893,8 +4893,6 @@ function restoreAutosave() {
 }
 
 function startFreshAutosave() {
-  const confirmed = window.confirm('Start fresh? This will clear the local autosave cache for this iceberg in this browser.');
-  if (!confirmed) return;
   clearAutosaveStorage();
   pendingAutosavePayload = null;
   hideAutosavePrompt();
