@@ -2507,8 +2507,23 @@ function renderDetailPanel() {
   els.detailCard.classList.add('active');
 }
 
-function showDetailSidebar() {
+function isMobileLayout() {
+  return window.matchMedia?.('(max-width: 760px)').matches || window.innerWidth <= 760;
+}
+
+function setMobilePanel(panel) {
+  const leftOpen = panel === 'left';
+  const detailOpen = panel === 'detail';
+  document.body.classList.toggle('mobile-left-open', leftOpen);
+  document.body.classList.toggle('mobile-detail-open', detailOpen);
+  document.getElementById('mobile-panel-scrim')?.toggleAttribute('hidden', !(leftOpen || detailOpen));
+  document.getElementById('mobile-show-left')?.setAttribute('aria-expanded', leftOpen ? 'true' : 'false');
+  document.getElementById('mobile-show-detail')?.setAttribute('aria-expanded', detailOpen ? 'true' : 'false');
+}
+
+function showDetailSidebar(openMobilePanel = false) {
   els.detailSidebar?.classList.remove('collapsed');
+  if (openMobilePanel && isMobileLayout()) setMobilePanel('detail');
   scheduleSearchLinesUpdate();
   if (els.detailCollapse) {
     els.detailCollapse.textContent = '›';
@@ -2528,6 +2543,7 @@ function clearDetailSelection() {
 
 function hideDetailSidebar(clearCurrent = false) {
   els.detailSidebar?.classList.add('collapsed');
+  if (document.body.classList.contains('mobile-detail-open')) setMobilePanel(null);
   scheduleSearchLinesUpdate();
   if (els.detailCollapse) {
     els.detailCollapse.textContent = '‹';
@@ -2537,8 +2553,9 @@ function hideDetailSidebar(clearCurrent = false) {
   if (clearCurrent) clearDetailSelection();
 }
 
-function showLeftSidebar() {
+function showLeftSidebar(openMobilePanel = false) {
   els.leftSidebar?.classList.remove('collapsed');
+  if (openMobilePanel && isMobileLayout()) setMobilePanel('left');
   if (els.leftCollapse) {
     els.leftCollapse.textContent = '‹';
     els.leftCollapse.setAttribute('aria-expanded', 'true');
@@ -2548,6 +2565,7 @@ function showLeftSidebar() {
 
 function hideLeftSidebar() {
   els.leftSidebar?.classList.add('collapsed');
+  if (document.body.classList.contains('mobile-left-open')) setMobilePanel(null);
   if (els.leftCollapse) {
     els.leftCollapse.textContent = '›';
     els.leftCollapse.setAttribute('aria-expanded', 'false');
@@ -2577,7 +2595,7 @@ function openModal(itemId) {
   currentItemId = item.id;
   renderSelection();
   renderDetailPanel();
-  showDetailSidebar();
+  showDetailSidebar(true);
   return true;
 }
 function beginTitleEdit() {
@@ -4298,14 +4316,14 @@ els.wrapper?.addEventListener('pointercancel', () => clearEntryDriftOffsets());
 els.detailCollapse.addEventListener('click', e => {
   e.stopPropagation();
   const isCollapsed = els.detailSidebar.classList.contains('collapsed');
-  if (isCollapsed) showDetailSidebar();
+  if (isCollapsed) showDetailSidebar(true);
   else hideDetailSidebar(false);
 });
 
 els.leftCollapse?.addEventListener('click', e => {
   e.stopPropagation();
   const isCollapsed = els.leftSidebar?.classList.contains('collapsed');
-  if (isCollapsed) showLeftSidebar();
+  if (isCollapsed) showLeftSidebar(true);
   else hideLeftSidebar();
 });
 
@@ -4752,6 +4770,30 @@ document.addEventListener('keydown', e => {
   hideHoverPreview();
   if (els.detailCard?.classList.contains('description-editing')) return;
   clearDetailSelection();
+});
+
+
+document.getElementById('mobile-show-left')?.addEventListener('click', e => {
+  e.preventDefault();
+  if (document.body.classList.contains('mobile-left-open')) setMobilePanel(null);
+  else showLeftSidebar(true);
+});
+
+document.getElementById('mobile-show-canvas')?.addEventListener('click', e => {
+  e.preventDefault();
+  setMobilePanel(null);
+});
+
+document.getElementById('mobile-show-detail')?.addEventListener('click', e => {
+  e.preventDefault();
+  if (document.body.classList.contains('mobile-detail-open')) setMobilePanel(null);
+  else showDetailSidebar(true);
+});
+
+document.getElementById('mobile-panel-scrim')?.addEventListener('click', () => setMobilePanel(null));
+
+window.addEventListener('resize', () => {
+  if (!isMobileLayout()) setMobilePanel(null);
 });
 
 els.wrapper?.closest('.iceberg-area')?.addEventListener('scroll', () => {
