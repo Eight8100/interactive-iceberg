@@ -4887,7 +4887,8 @@ function syncMobileSearchPlacement() {
   if (!titleRow || !searchPanel) return;
 
   if (mobileLayoutActive()) {
-    if (titleRow.parentNode !== sheetContent) sheetContent.appendChild(titleRow);
+    const titleParent = titlePlaceholder?.parentNode;
+    if (titleParent && titleRow.parentNode !== titleParent) titleParent.insertBefore(titleRow, titlePlaceholder.nextSibling);
     if (searchPanel.parentNode !== sheetContent) sheetContent.appendChild(searchPanel);
   } else {
     const titleParent = titlePlaceholder?.parentNode;
