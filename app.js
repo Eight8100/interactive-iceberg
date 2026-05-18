@@ -4863,7 +4863,9 @@ const mobileSearchPlacement = {
 };
 
 function mobileLayoutActive() {
-  return window.matchMedia?.('(max-width: 760px)').matches || window.innerWidth <= 760;
+  const vvWidth = window.visualViewport?.width || Infinity;
+  const coarseMobile = window.matchMedia?.('(pointer: coarse) and (max-width: 1100px)').matches;
+  return window.matchMedia?.('(max-width: 760px)').matches || window.innerWidth <= 760 || vvWidth <= 760 || coarseMobile;
 }
 
 function syncMobileSearchPlacement() {
@@ -4963,7 +4965,13 @@ function updateMobileIcebergScale() {
   document.body.classList.add('mobile-layout-active');
   hideHoverPreview();
   const area = els.wrapper.closest('.iceberg-area');
-  const areaWidth = Math.max(1, area?.clientWidth || window.innerWidth);
+  const viewportWidth = Math.min(
+    window.innerWidth || Infinity,
+    window.visualViewport?.width || Infinity,
+    document.documentElement.clientWidth || Infinity
+  );
+  const rawAreaWidth = area?.clientWidth || viewportWidth || window.innerWidth || 1;
+  const areaWidth = Math.max(1, Math.min(rawAreaWidth, viewportWidth || rawAreaWidth));
   const styles = getComputedStyle(area || document.documentElement);
   const padX = (parseFloat(styles.paddingLeft) || 0) + (parseFloat(styles.paddingRight) || 0);
   const availableWidth = Math.max(240, areaWidth - padX);
