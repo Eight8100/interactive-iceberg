@@ -128,6 +128,7 @@ const els = {
   detailCard: $('detail-card'),
   detailPlaceholder: $('detail-placeholder'),
   detailHeading: $('detail-heading'),
+  linkedEntryBack: $('mobile-linked-entry-back'),
   detailTitleDisplay: $('detail-title-display'),
   detailTitleEdit: $('detail-title-edit'),
   detailTitleError: $('detail-title-error'),
@@ -864,7 +865,8 @@ function renderYouTubeEmbeds(item) {
 
     const activate = () => {
       wrap.innerHTML = '';
-      wrap.style.paddingBottom = '56.25%';
+      wrap.classList.add('is-playing');
+      wrap.style.paddingBottom = '';
       const iframe = document.createElement('iframe');
       iframe.src = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1`;
       iframe.setAttribute('allowfullscreen', '');
@@ -1342,6 +1344,25 @@ function updateIcebergSearchCount() {
   const count = state.items.filter(itemMatchesIcebergSearch).length;
   els.icebergSearchCount.textContent = count === 1 ? '1 iceberg match' : `${count} iceberg matches`;
   els.icebergSearchCount.classList.toggle('has-results', count > 0);
+}
+
+function applyIcebergSearchVisuals() {
+  const hasSearch = !!icebergSearchTerm.trim();
+  document.querySelectorAll('.tier-items-cell').forEach(cell => {
+    cell.classList.toggle('search-active', hasSearch);
+  });
+  document.querySelectorAll('.item-chip').forEach(chip => {
+    const item = getItemById(chip.dataset.itemId);
+    chip.classList.toggle('search-match', !!item && itemMatchesIcebergSearch(item));
+  });
+  scheduleSearchLinesUpdate();
+}
+
+function clearIcebergSearch({ clearInput = true } = {}) {
+  icebergSearchTerm = '';
+  if (clearInput && els.icebergSearch) els.icebergSearch.value = '';
+  updateIcebergSearchCount();
+  applyIcebergSearchVisuals();
 }
 
 /* ── Connector line rendering (entry-link hover and pick-mode pickwhip) ── */
@@ -2197,6 +2218,7 @@ function removeItemToPool(item) {
 
 function deleteItem(id) {
   selectedItemIds.delete(id);
+  linkedEntryBackStack = linkedEntryBackStack.filter(entryId => entryId !== id);
   if (currentItemId === id) closeImagePreviewForItemChange();
   state.items = state.items.filter(item => item.id !== id);
   if (currentItemId === id) currentItemId = null;
@@ -2525,6 +2547,7 @@ function renderDetailPanel() {
     closeEntryLinkPicker();
     stopEntryPickMode();
     descriptionEditItemId = null;
+    syncLinkedEntryBackButton();
     return;
   }
 
@@ -2564,6 +2587,7 @@ function renderDetailPanel() {
   els.detailCard.classList.remove('active');
   void els.detailCard.offsetWidth;
   els.detailCard.classList.add('active');
+  syncLinkedEntryBackButton();
 }
 
 function showDetailSidebar() {
@@ -2579,6 +2603,7 @@ function showDetailSidebar() {
 function clearDetailSelection() {
   closeImagePreviewForItemChange();
   currentItemId = null;
+  linkedEntryBackStack = [];
   selectedItemIds.clear();
   renderSelection();
   renderDetailPanel();
@@ -2637,7 +2662,10 @@ function openModal(itemId) {
   renderSelection();
   renderDetailPanel();
   showDetailSidebar();
-  if (mobileLayoutActive()) setMobilePanel('details');
+  if (mobileLayoutActive()) {
+    const keepSearchOpen = !$('mobile-search-sheet')?.hidden;
+    setMobilePanel('details', { keepSearchOpen });
+  }
   return true;
 }
 function beginTitleEdit() {
@@ -3259,14 +3287,20 @@ function openInternalEntryLink(link) {
   const target = link?.dataset?.entryId || link?.dataset?.entryTarget;
   const item = findItemByEntryLinkTarget(target);
   if (!item) return;
+  const previousId = currentItemId;
   if (els.detailCard?.classList.contains('description-editing')) {
     if (!commitTitleEditIfOpen()) return;
     finishDescriptionEdit();
+  }
+  if (mobileLayoutActive() && previousId && previousId !== item.id) {
+    const lastBackId = linkedEntryBackStack[linkedEntryBackStack.length - 1];
+    if (lastBackId !== previousId) linkedEntryBackStack.push(previousId);
   }
   selectedItemIds = item.tierId ? new Set([item.id]) : new Set();
   renderSelection();
   hideHoverPreview();
   openModal(item.id);
+  syncLinkedEntryBackButton();
 }
 
 function toggleCurrentVerification() {
@@ -4148,14 +4182,20 @@ function setHeaderMenuExpanded(menu, expanded) {
 function closeAppMenu() {
   headerMenus().forEach(menu => {
     if (!menu.open) return;
+    const summary = menu.querySelector('summary');
     const panel = menu.querySelector('.app-menu-panel');
+    setHeaderMenuExpanded(menu, false);
+    summary?.blur?.();
+    summary?.classList.remove('is-tap-active');
     if (panel) playClosingAnimation(panel, () => {
       menu.open = false;
       setHeaderMenuExpanded(menu, false);
+      summary?.blur?.();
     });
     else {
       menu.open = false;
       setHeaderMenuExpanded(menu, false);
+      summary?.blur?.();
     }
   });
 }
@@ -4316,6 +4356,7 @@ els.entryDrift?.addEventListener('change', e => {
 
 els.icebergLockToggle?.addEventListener('click', e => {
   e.preventDefault();
+  e.currentTarget?.blur?.();
   state.icebergLocked = !state.icebergLocked;
   if (state.icebergLocked) {
     endFluidDrag(false);
@@ -4350,7 +4391,7 @@ if (els.icebergSearch) {
     icebergSearchTerm = e.target.value;
     renderTiers();
     updateIcebergSearchCount();
-    scheduleSearchLinesUpdate();
+    applyIcebergSearchVisuals();
   });
 }
 
@@ -4561,6 +4602,8 @@ document.addEventListener('click', e => {
     hideHoverPreview(chip.dataset.itemId);
     clearRandomHighlight();
     if (mobileLayoutActive()) {
+      linkedEntryBackStack = [];
+      syncLinkedEntryBackButton();
       const tappedItem = getItemById(chip.dataset.itemId);
       mobileDetailsReturnPanel = (!tappedItem?.tierId && els.leftSidebar?.classList.contains('mobile-panel-open')) ? 'entries' : 'none';
     }
@@ -4779,12 +4822,20 @@ document.addEventListener('click', e => {
   if (els.aboutModal && !els.aboutModal.hidden && !e.target.closest('#about-modal') && !e.target.closest('#about-btn')) closeAboutModal();
 });
 
-$('search-random-btn')?.addEventListener('click', () => {
+$('search-random-btn')?.addEventListener('click', e => {
+  e.preventDefault();
+  e.stopPropagation();
   const placed = state.items.filter(i => i.tierId);
   if (!placed.length) return;
+  const searchWasOpen = mobileLayoutActive() && !$('mobile-search-sheet')?.hidden;
   const pick = placed[Math.floor(Math.random() * placed.length)];
-  selectedItemIds.clear();
+  clearIcebergSearch();
+  linkedEntryBackStack = [];
+  selectedItemIds = new Set([pick.id]);
   if (!openModal(pick.id)) return;
+  if (!searchWasOpen) closeMobileSearchSheet();
+  if (mobileLayoutActive()) setMobilePanel('details', { keepSearchOpen: searchWasOpen });
+  if (searchWasOpen) updateMobileSearchSheetMetrics();
   window.clearTimeout(randomHighlightTimer);
   randomHighlightTimer = window.setTimeout(() => {
     if (currentItemId !== pick.id) return;
@@ -4805,11 +4856,14 @@ document.addEventListener('click', e => {
 });
 
 headerMenus().forEach(menu => {
-  menu.querySelector('summary')?.addEventListener('mousedown', e => { e.preventDefault(); });
-  menu.querySelector('summary')?.addEventListener('click', e => {
+  const summary = menu.querySelector('summary');
+  summary?.addEventListener('mousedown', e => { e.preventDefault(); });
+  summary?.addEventListener('pointerup', () => window.setTimeout(() => summary.blur?.(), 0));
+  summary?.addEventListener('click', e => {
     e.preventDefault();
     if (menu.open) {
       closeAppMenu();
+      window.setTimeout(() => summary.blur?.(), 0);
     } else {
       openMenu(menu);
     }
@@ -4866,6 +4920,7 @@ const mobileSearchPlacement = {
   searchPlaceholder: null,
 };
 let mobileDetailsReturnPanel = 'none';
+let linkedEntryBackStack = [];
 
 function mobileLayoutActive() {
   const vvWidth = window.visualViewport?.width || Infinity;
@@ -4904,7 +4959,7 @@ function syncMobileSearchPlacement() {
   }
 }
 
-function setMobilePanel(panelName = 'none') {
+function setMobilePanel(panelName = 'none', options = {}) {
   const entriesOpen = panelName === 'entries';
   const detailsOpen = panelName === 'details';
   if (mobileLayoutActive()) {
@@ -4915,13 +4970,35 @@ function setMobilePanel(panelName = 'none') {
   els.detailSidebar?.classList.toggle('mobile-panel-open', detailsOpen);
   document.body.classList.toggle('mobile-panel-open-body', entriesOpen || detailsOpen);
 
+  if (mobileLayoutActive() && !detailsOpen && selectedItemIds.size) {
+    selectedItemIds.clear();
+    renderSelection();
+  }
+
   const entriesBtn = $('mobile-nav-entries');
   const detailsBtn = $('mobile-nav-details');
   entriesBtn?.classList.toggle('active', entriesOpen);
   detailsBtn?.classList.toggle('active', detailsOpen);
   entriesBtn?.setAttribute('aria-expanded', String(entriesOpen));
   detailsBtn?.setAttribute('aria-expanded', String(detailsOpen));
-  if (entriesOpen || detailsOpen) closeMobileSearchSheet();
+  if (entriesOpen || detailsOpen) {
+    if (options.keepSearchOpen && detailsOpen) updateMobileSearchSheetMetrics();
+    else closeMobileSearchSheet();
+  }
+}
+
+
+function updateMobileSearchSheetMetrics() {
+  const sheet = $('mobile-search-sheet');
+  const root = document.documentElement;
+  const isOpen = !!sheet && !sheet.hidden && mobileLayoutActive();
+  document.body.classList.toggle('mobile-search-open', isOpen);
+  if (!isOpen || !sheet) {
+    root.style.removeProperty('--mobile-search-sheet-h');
+    return;
+  }
+  const height = Math.ceil(sheet.getBoundingClientRect().height || sheet.offsetHeight || 0);
+  if (height > 0) root.style.setProperty('--mobile-search-sheet-h', `${height}px`);
 }
 
 function openMobileSearchSheet() {
@@ -4932,6 +5009,7 @@ function openMobileSearchSheet() {
   const toggle = $('mobile-search-toggle');
   if (!sheet) return;
   sheet.hidden = false;
+  updateMobileSearchSheetMetrics();
   toggle?.classList.add('active');
   toggle?.setAttribute('aria-expanded', 'true');
   window.setTimeout(() => els.icebergSearch?.focus({ preventScroll: true }), 0);
@@ -4941,14 +5019,37 @@ function closeMobileSearchSheet() {
   const sheet = $('mobile-search-sheet');
   const toggle = $('mobile-search-toggle');
   if (sheet) sheet.hidden = true;
+  updateMobileSearchSheetMetrics();
   toggle?.classList.remove('active');
   toggle?.setAttribute('aria-expanded', 'false');
+  toggle?.blur?.();
+  if (mobileLayoutActive()) clearIcebergSearch();
 }
 
 function toggleMobileSearchSheet() {
   const sheet = $('mobile-search-sheet');
   if (!sheet || sheet.hidden) openMobileSearchSheet();
   else closeMobileSearchSheet();
+}
+
+function syncLinkedEntryBackButton() {
+  if (!els.linkedEntryBack) return;
+  const canGoBack = mobileLayoutActive() && currentItemId && linkedEntryBackStack.some(id => !!getItemById(id));
+  els.linkedEntryBack.hidden = !canGoBack;
+}
+
+function goBackFromLinkedEntry() {
+  while (linkedEntryBackStack.length) {
+    const previousId = linkedEntryBackStack.pop();
+    const previousItem = getItemById(previousId);
+    if (!previousItem || previousId === currentItemId) continue;
+    selectedItemIds = previousItem.tierId ? new Set([previousItem.id]) : new Set();
+    renderSelection();
+    openModal(previousItem.id);
+    syncLinkedEntryBackButton();
+    return;
+  }
+  syncLinkedEntryBackButton();
 }
 
 function updateMobileIcebergScale() {
@@ -4993,6 +5094,7 @@ function updateMobileIcebergScale() {
   root.style.setProperty('--mobile-iceberg-scale', scale.toFixed(5));
   root.style.setProperty('--mobile-canvas-display-w', `${Math.ceil(logicalWidth * scale)}px`);
   root.style.setProperty('--mobile-canvas-display-h', `${Math.ceil(canvasHeight * scale)}px`);
+  syncLinkedEntryBackButton();
   scheduleSearchLinesUpdate();
 }
 
@@ -5029,6 +5131,7 @@ function initMobileLayout() {
   });
   searchToggle?.addEventListener('click', toggleMobileSearchSheet);
   searchClose?.addEventListener('click', closeMobileSearchSheet);
+  els.linkedEntryBack?.addEventListener('click', goBackFromLinkedEntry);
 
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape' || !mobileLayoutActive()) return;
@@ -5041,8 +5144,8 @@ function initMobileLayout() {
     }
   });
 
-  window.addEventListener('resize', updateMobileIcebergScale);
-  window.addEventListener('orientationchange', () => window.setTimeout(updateMobileIcebergScale, 80));
+  window.addEventListener('resize', () => { updateMobileIcebergScale(); updateMobileSearchSheetMetrics(); });
+  window.addEventListener('orientationchange', () => window.setTimeout(() => { updateMobileIcebergScale(); updateMobileSearchSheetMetrics(); }, 80));
   updateMobileIcebergScale();
 }
 
