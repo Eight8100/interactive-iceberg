@@ -120,6 +120,7 @@
     </div>
 
     <h3>Unplaced</h3>
+    <div class="mobile-entries-note">Dragging and dropping entries is not supported on mobile right now. Tap an entry to view its details.</div>
     <div class="unplaced-pool" id="unplaced-pool"></div>
 
     <button class="sidebar-collapse-toggle" id="sidebar-collapse-toggle" type="button" aria-expanded="true" title="Hide entry tray">‹</button>
@@ -154,7 +155,8 @@
         <li>Add entries in the left sidebar, and drag anywhere onto the iceberg.</li>
         <li>Use the search box to find specific entries.</li>
         <li>Images and YouTube links are supported!</li>
-        <li>Link similar entries with the <span class="inline-connector-icon" aria-hidden="true">⊕</span> icon.</li>
+        <li class="desktop-only-helper">Link similar entries with the <span class="inline-connector-icon" aria-hidden="true">⊕</span> icon.</li>
+        <li class="mobile-only-helper">For more functionality, including linking entries with each other, come back on desktop.</li>
       </ul>
       <div class="pip-key" aria-label="Pip key">
         <div><span class="pip-key-dot pip-key-dot--verify" aria-hidden="true"></span><span>Needs verification</span></div>
@@ -222,7 +224,7 @@
 </div>
 <nav class="mobile-bottom-nav" id="mobile-bottom-nav" aria-label="Mobile panels">
   <button class="mobile-nav-btn" id="mobile-nav-entries" type="button" aria-controls="mobile-entries-sheet" aria-expanded="false">Entries</button>
-  <button class="mobile-nav-btn mobile-search-toggle" id="mobile-search-toggle" type="button" aria-label="Search and title" aria-haspopup="dialog" aria-expanded="false">Search</button>
+  <button class="mobile-nav-btn mobile-search-toggle" id="mobile-search-toggle" type="button" aria-label="Search" aria-haspopup="dialog" aria-expanded="false"><svg viewBox="0 0 24 24" width="21" height="21" aria-hidden="true"><circle cx="10.5" cy="10.5" r="5.5" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M15 15l5 5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button>
   <button class="mobile-nav-btn" id="mobile-nav-details" type="button" aria-controls="detail-sidebar" aria-expanded="false">Details</button>
 </nav>
 

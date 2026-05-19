@@ -4240,3 +4240,76 @@ body.mobile-layout-active .iceberg-scroll-content::after {
 body.mobile-layout-active.mobile-panel-open-body .iceberg-scroll-content {
   height: calc(var(--mobile-canvas-display-h) + min(72vh, 620px) + 8px) !important;
 }
+
+/* Mobile follow-up polish */
+.mobile-entries-note,
+.mobile-only-helper { display: none; }
+
+@media (max-width: 760px) {
+  label[for="entry-drift"] { display: none !important; }
+
+  .mobile-entries-note {
+    display: block;
+    margin: -2px 0 2px;
+    padding: 9px 10px;
+    color: rgba(159,176,200,.86);
+    background: rgba(10,15,28,.28);
+    border: 1px solid rgba(100,160,255,.16);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  .desktop-only-helper { display: none !important; }
+  .mobile-only-helper { display: list-item; }
+
+  .mobile-bottom-nav {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 46px;
+  }
+
+  .mobile-search-toggle {
+    width: 46px;
+    min-width: 46px;
+    max-width: 46px;
+  }
+
+  .mobile-search-toggle::before { display: none !important; }
+  .mobile-search-toggle svg {
+    display: block;
+    width: 20px;
+    height: 20px;
+    pointer-events: none;
+  }
+
+  .mobile-search-toggle.active,
+  .mobile-search-toggle:hover,
+  .mobile-search-toggle:focus-visible {
+    color: #fff;
+  }
+}
+
+body.mobile-layout-active label[for="entry-drift"] { display: none !important; }
+body.mobile-layout-active .desktop-only-helper { display: none !important; }
+body.mobile-layout-active .mobile-only-helper { display: list-item; }
+body.mobile-layout-active .mobile-entries-note { display: block; }
+
+/* Mobile hardening for GitHub viewport differences */
+body.mobile-layout-active label[for="entry-drift"] { display: none !important; }
+body.mobile-layout-active .mobile-entries-note {
+  display: block;
+  margin: -2px 0 2px;
+  padding: 9px 10px;
+  color: rgba(159,176,200,.86);
+  background: rgba(10,15,28,.28);
+  border: 1px solid rgba(100,160,255,.16);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  line-height: 1.35;
+}
+body.mobile-layout-active .mobile-search-toggle::before { display: none !important; }
+body.mobile-layout-active .mobile-search-toggle svg {
+  display: block;
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+}

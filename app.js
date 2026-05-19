@@ -4560,6 +4560,10 @@ document.addEventListener('click', e => {
     renderSelection();
     hideHoverPreview(chip.dataset.itemId);
     clearRandomHighlight();
+    if (mobileLayoutActive()) {
+      const tappedItem = getItemById(chip.dataset.itemId);
+      mobileDetailsReturnPanel = (!tappedItem?.tierId && els.leftSidebar?.classList.contains('mobile-panel-open')) ? 'entries' : 'none';
+    }
     openModal(chip.dataset.itemId);
     return;
   }
@@ -4861,6 +4865,7 @@ const mobileSearchPlacement = {
   titlePlaceholder: null,
   searchPlaceholder: null,
 };
+let mobileDetailsReturnPanel = 'none';
 
 function mobileLayoutActive() {
   const vvWidth = window.visualViewport?.width || Infinity;
@@ -4991,6 +4996,21 @@ function updateMobileIcebergScale() {
   scheduleSearchLinesUpdate();
 }
 
+
+function initHeaderMenuFocusCleanup() {
+  document.querySelectorAll('.header-menu > summary').forEach(summary => {
+    const details = summary.parentElement;
+    if (!details) return;
+    summary.addEventListener('click', () => {
+      const wasOpen = details.open;
+      if (wasOpen) window.setTimeout(() => summary.blur(), 0);
+    });
+    details.addEventListener('toggle', () => {
+      if (!details.open) window.setTimeout(() => summary.blur(), 0);
+    });
+  });
+}
+
 function initMobileLayout() {
   const entriesBtn = $('mobile-nav-entries');
   const detailsBtn = $('mobile-nav-details');
@@ -4999,10 +5019,14 @@ function initMobileLayout() {
   const searchToggle = $('mobile-search-toggle');
   const searchClose = $('mobile-search-close');
 
-  entriesBtn?.addEventListener('click', () => setMobilePanel('entries'));
-  detailsBtn?.addEventListener('click', () => setMobilePanel('details'));
+  entriesBtn?.addEventListener('click', () => { mobileDetailsReturnPanel = 'none'; setMobilePanel('entries'); });
+  detailsBtn?.addEventListener('click', () => { mobileDetailsReturnPanel = 'none'; setMobilePanel('details'); });
   entriesClose?.addEventListener('click', () => setMobilePanel('none'));
-  detailsClose?.addEventListener('click', () => setMobilePanel('none'));
+  detailsClose?.addEventListener('click', () => {
+    const targetPanel = mobileDetailsReturnPanel === 'entries' ? 'entries' : 'none';
+    mobileDetailsReturnPanel = 'none';
+    setMobilePanel(targetPanel);
+  });
   searchToggle?.addEventListener('click', toggleMobileSearchSheet);
   searchClose?.addEventListener('click', closeMobileSearchSheet);
 
@@ -5026,6 +5050,7 @@ function initMobileLayout() {
 showDetailSidebar();
 initLockLottie();
 initAutosave();
+initHeaderMenuFocusCleanup();
 initMobileLayout();
 render();
 renderDetailPanel();
