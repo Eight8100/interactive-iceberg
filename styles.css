@@ -3260,7 +3260,7 @@ body.has-random-highlight .tier-items-cell .item-chip:not(.random-highlight) {
 }
 
 
-/* ── Visual consistency pass ── */
+/* ── Cross-component consistency ── */
 .console-popup,
 .app-menu-panel,
 .about-modal,
@@ -3326,7 +3326,7 @@ body.has-random-highlight .tier-items-cell .item-chip:not(.random-highlight) {
 }
 
 
-/* ── Scrollbar polish ── */
+/* ── Custom scrollbars ── */
 .iceberg-area,
 .detail-sidebar,
 .unplaced-pool,
@@ -3349,7 +3349,7 @@ body.has-random-highlight .tier-items-cell .item-chip:not(.random-highlight) {
   display: none;
 }
 
-/* Locked read-only polish */
+/* Locked read-only state */
 body.iceberg-locked .detail-edit-row,
 body.iceberg-locked .detail-edit-btn,
 body.iceberg-locked .detail-done-btn {
@@ -3363,7 +3363,7 @@ body.iceberg-locked .image-modal-edit-row {
 
 /* Image modal uses its own glass blur; the hidden modal remains composited to avoid a one-frame blur snap on open. */
 
-/* ── Log clear affordance + detail placeholder polish ── */
+/* ── Log popup and detail placeholder ── */
 .console-clear-btn {
   display: inline-flex;
   align-items: center;
@@ -3454,7 +3454,7 @@ body.iceberg-locked .image-modal-edit-row {
 .pip-key-dot--verify { background: var(--remove); }
 .pip-key-dot--missing { background: var(--danger); }
 
-/* Final image preview/detail polish */
+/* Image preview hover card */
 .description-image-thumb,
 .detail-card:not(.description-editing) .description-image-thumb,
 .image-drop-zone.has-images .description-image-thumb {
@@ -3476,7 +3476,15 @@ body.iceberg-locked .image-modal-edit-row {
   background: rgba(74,158,255,.045);
 }
 
-/* Mobile layout pass */
+/* ──────────────────────────────────────────────────────────────
+   Mobile layout
+   Mobile rules use two targeting strategies that intentionally
+   coexist: (1) standard `@media (max-width: 760px)` queries, and
+   (2) a `body.mobile-layout-active` class added by JS as a
+   fallback when viewport reporting is unreliable (notably on
+   GitHub Pages and certain in-app browsers). Both are needed.
+   ────────────────────────────────────────────────────────────── */
+/* Base: hide mobile-only chrome on desktop */
 .mobile-bottom-nav { display: none; }
 
 @media (max-width: 760px) {
@@ -3789,10 +3797,6 @@ body.iceberg-locked .image-modal-edit-row {
     text-overflow: ellipsis;
   }
 
-  .entry-chip {
-    touch-action: none;
-  }
-
   .image-modal-card {
     width: calc(100vw - 20px);
     max-height: calc(100vh - var(--header-h) - 28px);
@@ -3813,21 +3817,11 @@ body.iceberg-locked .image-modal-edit-row {
   }
 }
 
-/* Mobile panel polish follow-up */
+/* Mobile search toggle and panel controls */
 .mobile-search-toggle,
 .mobile-search-sheet,
 .mobile-panel-close { display: none; }
 
-.youtube-embed-wrap {
-  max-width: 100%;
-  aspect-ratio: 16 / 9;
-  height: auto;
-  contain: layout paint;
-}
-.youtube-thumb {
-  height: 100%;
-  padding-bottom: 0;
-}
 .youtube-embed-wrap iframe,
 .youtube-embed-wrap img {
   max-width: 100%;
@@ -4055,7 +4049,7 @@ body.iceberg-locked .image-modal-edit-row {
   .console-popup::before { left: auto; right: 60px; }
 }
 
-/* Mobile GitHub Pages hardening: use the JS-added class as a fallback when mobile viewport reporting differs. */
+/* JS-detected mobile fallbacks (see banner above) */
 body.mobile-layout-active .layout {
   display: block !important;
   height: calc(100vh - var(--header-h) - var(--mobile-nav-h, 58px)) !important;
@@ -4134,7 +4128,7 @@ body.mobile-layout-active .mobile-bottom-nav {
   display: grid !important;
 }
 
-/* Mobile footer-search and viewport cleanup */
+/* Mobile footer-search sheet */
 @media (max-width: 760px) {
   :root {
     --mobile-scroll-spacer: 8px;
@@ -4239,7 +4233,7 @@ body.mobile-layout-active.mobile-panel-open-body .iceberg-scroll-content {
   height: calc(var(--mobile-canvas-display-h) + min(72vh, 620px) + 8px) !important;
 }
 
-/* Mobile follow-up polish */
+/* Mobile entry tray helpers */
 .mobile-entries-note,
 .mobile-only-helper { display: none; }
 
@@ -4286,13 +4280,10 @@ body.mobile-layout-active.mobile-panel-open-body .iceberg-scroll-content {
   }
 }
 
+/* Mobile entry tray helpers — class-based fallback */
 body.mobile-layout-active label[for="entry-drift"] { display: none !important; }
 body.mobile-layout-active .desktop-only-helper { display: none !important; }
 body.mobile-layout-active .mobile-only-helper { display: list-item; }
-body.mobile-layout-active .mobile-entries-note { display: block; }
-
-/* Mobile hardening for GitHub viewport differences */
-body.mobile-layout-active label[for="entry-drift"] { display: none !important; }
 body.mobile-layout-active .mobile-entries-note {
   display: block;
   margin: -2px 0 2px;
@@ -4353,7 +4344,7 @@ body.mobile-layout-active .mobile-search-toggle svg {
   }
 }
 
-/* Mobile search sheet title and stacked details behavior */
+/* Mobile search sheet and detail stack */
 @media (max-width: 760px) {
   .mobile-search-title {
     min-height: 30px;
@@ -4406,7 +4397,7 @@ body.mobile-layout-active .mobile-search-sheet .detail-search-panel {
   padding: 0;
 }
 
-/* Mobile detail/video sizing polish */
+/* Mobile video embed sizing */
 .youtube-embeds {
   align-items: flex-start;
 }
@@ -4417,6 +4408,7 @@ body.mobile-layout-active .mobile-search-sheet .detail-search-panel {
   height: auto;
   padding: 0 !important;
   margin: 10px 0 0;
+  contain: layout paint;
 }
 .youtube-thumb {
   position: absolute;
@@ -4468,7 +4460,7 @@ body.mobile-layout-active .mobile-search-sheet .detail-search-panel {
 }
 
 
-/* Mobile YouTube/detail sizing follow-up */
+/* Mobile detail sidebar panel */
 body.mobile-layout-active .detail-sidebar.mobile-panel-open {
   overflow-y: auto !important;
   overscroll-behavior: contain;
@@ -4521,7 +4513,7 @@ body.mobile-layout-active .description-image-thumb {
   height: auto;
 }
 
-/* Mobile details title/header alignment polish */
+/* Mobile detail header alignment */
 body.mobile-layout-active .detail-sidebar.mobile-panel-open {
   padding-top: 28px;
 }
@@ -4553,19 +4545,20 @@ body.mobile-layout-active .detail-sidebar.mobile-panel-open .mobile-linked-entry
   color: var(--remove);
 }
 
-/* Mobile modal/menu template cleanup */
+/* Mobile modal and menu panels */
 @media (max-width: 760px), (pointer: coarse) and (max-width: 1100px) {
   body.mobile-layout-active .app-menu-panel,
   body.mobile-layout-active .console-popup {
     position: fixed;
-    top: calc(var(--header-h) + 8px);
+    top: calc(var(--header-h) + 14px);
     width: min(326px, calc(100vw - 24px));
     max-width: calc(100vw - 24px);
-    max-height: calc(100dvh - var(--header-h) - var(--mobile-nav-h) - 22px);
+    max-height: calc(100dvh - var(--header-h) - var(--mobile-nav-h) - 28px);
     overflow: visible;
-    border-radius: 10px;
+    z-index: var(--z-popover);
     background: var(--menu-glass-bg);
     border: 1px solid var(--menu-glass-border);
+    border-radius: var(--menu-glass-radius);
     box-shadow: var(--menu-glass-shadow);
     backdrop-filter: var(--menu-glass-blur);
     -webkit-backdrop-filter: var(--menu-glass-blur);
@@ -4576,22 +4569,19 @@ body.mobile-layout-active .detail-sidebar.mobile-panel-open .mobile-linked-entry
     content: '';
     display: block !important;
     position: absolute;
-    top: -10px;
-    width: 0;
-    height: 0;
-    background: transparent !important;
-    border-left: 11px solid transparent;
-    border-right: 11px solid transparent;
-    border-bottom: 11px solid var(--menu-glass-bg);
-    border-top: 0;
+    top: -7px;
+    width: 12px;
+    height: 12px;
+    background: var(--menu-glass-bg) !important;
+    border-left: 1px solid var(--menu-glass-border);
+    border-top: 1px solid var(--menu-glass-border);
+    border-right: 0;
+    border-bottom: 0;
     clip-path: none;
-    transform: none;
-    filter:
-      drop-shadow(-1px 0 0 var(--menu-glass-border))
-      drop-shadow(1px 0 0 var(--menu-glass-border))
-      drop-shadow(0 -1px 0 var(--menu-glass-border));
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+    transform: rotate(45deg);
+    filter: none;
+    backdrop-filter: var(--menu-glass-blur);
+    -webkit-backdrop-filter: var(--menu-glass-blur);
     pointer-events: none;
   }
 
@@ -4600,7 +4590,7 @@ body.mobile-layout-active .detail-sidebar.mobile-panel-open .mobile-linked-entry
   body.mobile-layout-active .console-popup { left: auto; right: 12px; }
   body.mobile-layout-active .file-panel::before { left: 14px; right: auto; }
   body.mobile-layout-active .display-panel::before { left: 52px; right: auto; }
-  body.mobile-layout-active .console-popup::before { left: auto; right: 60px; }
+  body.mobile-layout-active .console-popup::before { left: auto; right: var(--log-pointer-right, 60px); }
 
   body.mobile-layout-active .app-menu-panel > *,
   body.mobile-layout-active .console-popup > * {

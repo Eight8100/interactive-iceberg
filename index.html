@@ -57,7 +57,11 @@
             </select>
           </div>
         </details>
-        <button class="iceberg-lock-toggle header-lock-toggle" id="iceberg-lock-toggle" type="button" aria-pressed="false" aria-label="Lock iceberg editing"><span class="lock-lottie" id="lock-lottie" aria-hidden="true"></span><span class="lock-fallback-icon" id="lock-fallback-icon" aria-hidden="true">🔓</span><span class="sr-only" id="lock-sr-label">Lock iceberg editing</span></button>
+        <button class="iceberg-lock-toggle header-lock-toggle" id="iceberg-lock-toggle" type="button" aria-pressed="false" aria-label="Lock iceberg editing">
+          <span class="lock-lottie" id="lock-lottie" aria-hidden="true"></span>
+          <span class="lock-fallback-icon" id="lock-fallback-icon" aria-hidden="true">🔓</span>
+          <span class="sr-only" id="lock-sr-label">Lock iceberg editing</span>
+        </button>
       </div>
     </div>
   </div>
@@ -185,7 +189,10 @@
       <div class="description-editor-wrap" id="description-editor-wrap">
         <div class="detail-description-rich-edit" id="detail-description-rich-edit" contenteditable="true" role="textbox" aria-label="Description" aria-multiline="true" spellcheck="true" hidden></div>
         <textarea class="detail-description-edit" id="detail-description-edit" placeholder="Description..." hidden></textarea>
-        <button class="btn rich-text-btn syntax-toggle" id="description-syntax-toggle" type="button" title="Switch to syntax editor" aria-pressed="false"><span class="syntax-toggle-view">Aa</span><span class="syntax-toggle-code">&lt;/&gt;</span></button>
+        <button class="btn rich-text-btn syntax-toggle" id="description-syntax-toggle" type="button" title="Switch to syntax editor" aria-pressed="false">
+          <span class="syntax-toggle-view">Aa</span>
+          <span class="syntax-toggle-code">&lt;/&gt;</span>
+        </button>
       </div>
       <div class="entry-link-actions" id="entry-link-actions">
         <span class="description-tool-hint" id="entry-link-hint" aria-live="polite"></span>
@@ -226,7 +233,12 @@
 </div>
 <nav class="mobile-bottom-nav" id="mobile-bottom-nav" aria-label="Mobile panels">
   <button class="mobile-nav-btn" id="mobile-nav-entries" type="button" aria-controls="mobile-entries-sheet" aria-expanded="false">Entries</button>
-  <button class="mobile-nav-btn mobile-search-toggle" id="mobile-search-toggle" type="button" aria-label="Search" aria-haspopup="dialog" aria-expanded="false"><svg viewBox="0 0 24 24" width="21" height="21" aria-hidden="true"><circle cx="10.5" cy="10.5" r="5.5" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M15 15l5 5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button>
+  <button class="mobile-nav-btn mobile-search-toggle" id="mobile-search-toggle" type="button" aria-label="Search" aria-haspopup="dialog" aria-expanded="false">
+    <svg viewBox="0 0 24 24" width="21" height="21" aria-hidden="true">
+      <circle cx="10.5" cy="10.5" r="5.5" fill="none" stroke="currentColor" stroke-width="2.4"/>
+      <path d="M15 15l5 5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+    </svg>
+  </button>
   <button class="mobile-nav-btn" id="mobile-nav-details" type="button" aria-controls="detail-sidebar" aria-expanded="false">Details</button>
 </nav>
 
@@ -278,7 +290,6 @@
 
 <div class="entry-preview" id="entry-preview" hidden></div>
 
-<script type="application/json" id="lock-lottie-data">{"v":"4.8.0","meta":{"g":"LottieFiles AE ","a":"","k":"","d":"","tc":""},"fr":29.9700012207031,"ip":0,"op":56.000002,"w":500,"h":500,"nm":"Lock","ddd":1,"assets":[],"layers":[{"ddd":0,"ind":1,"ty":3,"nm":"Null 1","sr":1,"ks":{"o":{"a":0,"k":0,"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":0,"k":[472,58,0],"ix":2},"a":{"a":0,"k":[0,0,0],"ix":1},"s":{"a":0,"k":[263,263,100],"ix":6}},"ao":0,"ip":0,"op":80.0000032584668,"st":5.00000020365417,"bm":0},{"ddd":1,"ind":2,"ty":4,"nm":"Top","parent":1,"sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"rx":{"a":0,"k":0,"ix":8},"ry":{"a":1,"k":[{"t":5,"s":[0],"i":{"x":[0.36],"y":[1]},"o":{"x":[0.18],"y":[0]}},{"t":18,"s":[-180],"i":{"x":[0.36],"y":[1]},"o":{"x":[0.18],"y":[0]}},{"t":34,"s":[-180],"i":{"x":[0.36],"y":[1]},"o":{"x":[0.18],"y":[0]}},{"t":50,"s":[0]}],"ix":9},"rz":{"a":0,"k":0,"ix":10},"or":{"a":0,"k":[0,0,0],"ix":7},"p":{"a":0,"k":[-61.625,68.22,0],"ix":2},"a":{"a":0,"k":[23.375,17.625,0],"ix":1},"s":{"a":0,"k":[100,100,100],"ix":6}},"ao":0,"shapes":[{"ty":"gr","it":[{"ind":0,"ty":"sh","ix":1,"ks":{"a":0,"k":{"i":[[15.68,0],[0.01,0],[0,0],[0,0],[0,0],[0,0],[0,-15.68],[0,0],[-1.04,-1.03],[-1.58,0],[0,3.17],[0,0],[-9.34,-0.01],[0,0],[0,0],[0,0],[-0.01,-9.35],[0,0],[-3.17,0],[-1.04,1.04],[0,1.59],[0,0]],"o":[[0,0],[0,0],[0,0],[0,0],[-0.01,0],[-15.68,0],[0,0],[0,1.59],[1.04,1.04],[3.17,0],[0,0],[0.01,-9.35],[0,0],[0,0],[0,0],[9.34,-0.01],[0,0],[0,3.17],[1.58,0],[1.04,-1.03],[0,0],[0,-15.68]],"v":[[0.72,-31.055],[0.7,-31.055],[0.11,-31.055],[-0.11,-31.055],[-0.7,-31.055],[-0.72,-31.055],[-29.11,-2.665],[-29.11,19.544],[-27.42,23.594],[-23.37,25.274],[-17.63,19.534],[-17.63,-2.665],[-0.69,-19.575],[-0.11,-19.575],[0.11,-19.575],[0.69,-19.575],[17.63,-2.665],[17.63,20.815],[23.37,26.555],[27.42,24.875],[29.11,20.825],[29.11,-2.665]],"c":true},"ix":2},"nm":"Path 1","mn":"ADBE Vector Shape - Group","hd":false},{"ty":"fl","c":{"a":0,"k":[0,0,0,1],"ix":4},"o":{"a":0,"k":100,"ix":5},"r":1,"bm":0,"nm":"Fill 1","mn":"ADBE Vector Graphic - Fill","hd":false},{"ty":"tr","p":{"a":0,"k":[0,0],"ix":2},"a":{"a":0,"k":[0,0],"ix":1},"s":{"a":0,"k":[100,100],"ix":3},"r":{"a":0,"k":0,"ix":6},"o":{"a":0,"k":100,"ix":7},"sk":{"a":0,"k":0,"ix":4},"sa":{"a":0,"k":0,"ix":5},"nm":"Transform"}],"nm":"Group 1","np":2,"cix":2,"bm":0,"ix":1,"mn":"ADBE Vector Group","hd":false}],"ip":0,"op":80.0000032584668,"st":5.00000020365417,"bm":0},{"ddd":0,"ind":3,"ty":4,"nm":"Key-Hole V 2","parent":1,"sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":1,"k":[{"t":5,"s":[0],"i":{"x":[0.36],"y":[1]},"o":{"x":[0.18],"y":[0]}},{"t":18,"s":[180],"i":{"x":[0.36],"y":[1]},"o":{"x":[0.18],"y":[0]}},{"t":34,"s":[180],"i":{"x":[0.36],"y":[1]},"o":{"x":[0.18],"y":[0]}},{"t":48,"s":[0]}],"ix":10},"p":{"a":0,"k":[-84.875,100.648,0],"ix":2},"a":{"a":0,"k":[4.795,7.068,0],"ix":1},"s":{"a":0,"k":[100,100,100],"ix":6}},"ao":0,"shapes":[{"ty":"gr","it":[{"ind":0,"ty":"sh","ix":1,"ks":{"a":0,"k":{"i":[[2.511,0],[0,-2.51],[0,0],[-2.51,0],[0,2.511],[0,0]],"o":[[-2.51,0],[0,0],[0,2.511],[2.511,0],[0,0],[0,-2.51]],"v":[[0,-6.818],[-4.546,-2.273],[-4.546,2.273],[0,6.818],[4.546,2.273],[4.546,-2.273]],"c":true},"ix":2},"nm":"Path 1","mn":"ADBE Vector Shape - Group","hd":false},{"ty":"fl","c":{"a":0,"k":[1,1,1,1],"ix":4},"o":{"a":0,"k":100,"ix":5},"r":1,"bm":0,"nm":"Fill 1","mn":"ADBE Vector Graphic - Fill","hd":false},{"ty":"tr","p":{"a":0,"k":[4.795,7.068],"ix":2},"a":{"a":0,"k":[0,0],"ix":1},"s":{"a":0,"k":[100,100],"ix":3},"r":{"a":0,"k":0,"ix":6},"o":{"a":0,"k":100,"ix":7},"sk":{"a":0,"k":0,"ix":4},"sa":{"a":0,"k":0,"ix":5},"nm":"Transform"}],"nm":"Group 1","np":2,"cix":2,"bm":0,"ix":1,"mn":"ADBE Vector Group","hd":false}],"ip":0,"op":80.0000032584668,"st":5.00000020365417,"bm":0},{"ddd":0,"ind":4,"ty":4,"nm":"Bottom","parent":1,"sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":0,"k":[-84.875,100.648,0],"ix":2},"a":{"a":0,"k":[0,0,0],"ix":1},"s":{"a":0,"k":[100,100,100],"ix":6}},"ao":0,"shapes":[{"ty":"gr","it":[{"ind":0,"ty":"sh","ix":1,"ks":{"a":0,"k":{"i":[[0,-8.56],[0,0],[6.87,-1.58],[1.21,0],[0,0],[1.38,0.41],[0,7.05],[0,0],[-7.28,1.27],[-0.92,0],[0,0]],"o":[[0,0],[0,7.35],[-1.13,0.27],[0,0],[-1.51,0],[-6.44,-1.88],[0,0],[0,-7.64],[0.87,-0.16],[0,0],[8.56,0]],"v":[[42,-17],[42,17],[30.01,32.09],[26.5,32.5],[-26.5,32.5],[-30.86,31.87],[-42,17],[-42,-17],[-29.19,-32.26],[-26.5,-32.5],[26.5,-32.5]],"c":true},"ix":2},"nm":"Path 1","mn":"ADBE Vector Shape - Group","hd":false},{"ty":"fl","c":{"a":0,"k":[0,0,0,1],"ix":4},"o":{"a":0,"k":100,"ix":5},"r":1,"bm":0,"nm":"Fill 1","mn":"ADBE Vector Graphic - Fill","hd":false},{"ty":"tr","p":{"a":0,"k":[0,0],"ix":2},"a":{"a":0,"k":[0,0],"ix":1},"s":{"a":0,"k":[100,100],"ix":3},"r":{"a":0,"k":0,"ix":6},"o":{"a":0,"k":100,"ix":7},"sk":{"a":0,"k":0,"ix":4},"sa":{"a":0,"k":0,"ix":5},"nm":"Transform"}],"nm":"Group 1","np":2,"cix":2,"bm":0,"ix":1,"mn":"ADBE Vector Group","hd":false}],"ip":0,"op":80.0000032584668,"st":5.00000020365417,"bm":0}],"markers":[]}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js"></script>
 <script src="app.js"></script>
 </body>
