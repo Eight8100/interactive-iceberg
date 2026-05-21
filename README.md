@@ -4,6 +4,8 @@ There are plenty of websites and tools out there to create your own iceberg tier
 
 It started out with the simple idea to just add descriptions to entries, but it's grown to become a lot more as I've worked away at it.
 
+[**Link is here, have fun!**](https://eight8100.github.io/interactive-iceberg/)
+
 ## Features
 
 - Drag & drop entries anywhere on the iceberg, and organise by tier
