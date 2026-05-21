@@ -21,7 +21,13 @@ ____
 ____
 - Browser autosave plus local JSON save/load
 - Export your iceberg as a PNG for easy sharing
-____
+
+<br />
+
+<img width="3518" height="2468" alt="iceberg preview" src="https://github.com/user-attachments/assets/ee56b9d6-0a5e-44e7-bba6-f6647639365c" />
+
+<br />
+<br />
 
 Please let me know of any bugs!
 
