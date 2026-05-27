@@ -14,8 +14,10 @@
         <summary class="btn menu-toggle file-menu-toggle" aria-label="Open menu" aria-haspopup="menu" aria-expanded="false" title="Menu">☰</summary>
         <div class="app-menu-panel file-panel" role="group" aria-label="File actions menu">
           <h3 class="menu-section-title">File</h3>
-          <button class="menu-item" id="save-btn" type="button">Save JSON</button>
-          <button class="menu-item" id="load-btn" type="button">Load JSON</button>
+          <div class="file-menu-section">
+            <button class="menu-item primary" id="save-zip-btn" type="button">Save ZIP</button>
+            <button class="menu-item" id="load-zip-btn" type="button">Load ZIP</button>
+          </div>
           <button class="menu-item primary" id="export-btn" type="button">Export PNG</button>
         </div>
       </details>
@@ -65,9 +67,7 @@
       </div>
     </div>
   </div>
-  <div class="site-title" aria-label="Interactive Iceberg">
-    <img class="site-logo-img" src="interactive-iceberg-logo.png" alt="Interactive Iceberg">
-  </div>
+  <div class="site-title site-title-empty" aria-hidden="true"></div>
   <div class="header-right">
     <div class="autosave-menu-wrap">
       <div class="autosave-indicator" id="autosave-indicator" role="button" tabindex="0" aria-label="Log" aria-haspopup="dialog" aria-expanded="false">
@@ -80,7 +80,7 @@
           <div class="console-log-list" id="console-log-list" aria-live="polite">
             <p class="console-log-empty">No recent log entries.</p>
           </div>
-          <p class="console-notice">Entry images save with JSON exports only. Tier images autosave.</p>
+          <p class="console-notice">Entry images save with ZIP exports. Tier images autosave.</p>
           <button class="btn console-clear-btn" id="console-clear-cache-btn" type="button">Clear autosave cache...</button>
         </div>
       </div>
@@ -102,13 +102,17 @@
       </div>
     </div>
   </div>
-  <input type="file" id="file-input" accept=".json,application/json">
+  <input type="file" id="file-input" accept=".zip,application/zip,application/x-zip-compressed">
   <input type="file" id="tier-image-file" accept="image/*" hidden>
+  <input type="file" id="banner-image-file" accept="image/*" hidden>
 </header>
 
 <main class="layout">
   <aside class="sidebar">
     <button class="mobile-panel-close" id="mobile-entries-close" type="button" aria-label="Close entries panel">×</button>
+    <div class="sidebar-brand" aria-label="Interactive Iceberg">
+      <img class="sidebar-brand-img" src="interactive-iceberg-logo.png" alt="Interactive Iceberg">
+    </div>
     <div class="add-item-row">
       <h3>Add entry</h3>
       <input type="text" id="new-item-name" placeholder="Entry name..." maxlength="80" aria-describedby="add-item-error">
@@ -135,6 +139,14 @@
     <button class="btn mobile-linked-entry-back" id="mobile-linked-entry-back" type="button" hidden aria-label="Back to previous linked entry">‹</button>
     <button class="mobile-panel-close" id="mobile-details-close" type="button" aria-label="Close details panel">×</button>
     <div class="sidebar-chart-title-row">
+      <div class="chart-banner-wrap" id="chart-banner-wrap" hidden>
+        <img class="chart-banner-img" id="chart-banner-img" alt="">
+        <div class="chart-banner-actions" id="chart-banner-actions">
+          <button class="btn chart-banner-btn" id="chart-banner-replace-btn" type="button">Replace banner</button>
+          <button class="btn chart-banner-btn remove" id="chart-banner-remove-btn" type="button">Remove</button>
+        </div>
+      </div>
+      <button class="btn chart-banner-add-btn" id="chart-banner-add-btn" type="button">Add banner image</button>
       <div class="sidebar-chart-title-box">
         <textarea id="chart-title" rows="1" placeholder="Untitled iceberg..." spellcheck="false"></textarea>
       </div>
@@ -197,7 +209,7 @@
       <div class="image-manager" id="image-manager" aria-label="Description images">
         <div class="image-drop-zone" id="image-drop-zone" role="button" tabindex="0">
           <div class="image-drop-title">Drag &amp; drop images here</div>
-          <div class="image-drop-subtitle">Images save with your JSON.</div>
+          <div class="image-drop-subtitle">Images save with ZIP exports.</div>
           <div class="description-images" id="description-images"></div>
         </div>
         <input type="file" id="detail-image-file" accept="image/*" multiple hidden>
@@ -271,9 +283,9 @@
     <h2>A browser autosave was found.</h2>
     <div class="autosave-title-subheading" id="autosave-title-subheading"></div>
     <div class="autosave-meta" id="autosave-meta"></div>
-    <p class="autosave-images-note">⚠ Entry images are not included in autosaves! They will be loaded with your JSON.</p>
+    <p class="autosave-images-note">⚠ Entry images are not included in autosaves! Use a ZIP export to restore them.</p>
     <div class="autosave-actions autosave-actions-three">
-      <button class="btn primary" id="autosave-load-local-btn" type="button">Load JSON</button>
+      <button class="btn primary" id="autosave-load-local-btn" type="button">Load ZIP</button>
       <button class="btn" id="autosave-restore-btn" type="button">Load autosave</button>
       <button class="btn autosave-start-blank-btn" id="autosave-fresh-btn" type="button">Start blank</button>
     </div>
