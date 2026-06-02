@@ -97,6 +97,8 @@ let tierImageMoveModeId = null;
 let tierImageDrag = null;
 let entryDriftPointer = null;
 let entryDriftRaf = 0;
+let mobileDetailsReturnPanel = 'none';
+let linkedEntryBackStack = [];
 
 const $ = id => document.getElementById(id);
 
@@ -126,6 +128,8 @@ const els = {
   detailCollapse: $('detail-collapse-toggle'),
   chartBannerWrap: $('chart-banner-wrap'),
   chartBannerImg: $('chart-banner-img'),
+  chartBannerMenuToggle: $('chart-banner-menu-toggle'),
+  chartBannerMenu: $('chart-banner-menu'),
   chartBannerAdd: $('chart-banner-add-btn'),
   chartBannerReplace: $('chart-banner-replace-btn'),
   chartBannerRemove: $('chart-banner-remove-btn'),
@@ -369,7 +373,8 @@ function setDescriptionDisplay(markdown) {
     els.detailDescDisplay.innerHTML = renderMarkdown(description);
     els.detailDescDisplay.classList.remove('empty');
   } else {
-    els.detailDescDisplay.textContent = 'No description yet.';
+    const hint = icebergEditingLocked() ? '' : '<span class="empty-state-hint">Click Edit to add one.</span>';
+    els.detailDescDisplay.innerHTML = `<span class="empty-state-title">No description yet.</span>${hint}`;
     els.detailDescDisplay.classList.add('empty');
   }
 }
@@ -989,7 +994,7 @@ function tierGridTemplate() {
 /* ── State normalization ── */
 
 function normalizeState() {
-  state.version = Number(state.version) || 4;
+  state.version = Number(state.version) || STATE_VERSION;
   const oldTiers = Array.isArray(state.tiers) ? state.tiers : [];
   state.title = typeof state.title === 'string' ? state.title : 'My Iceberg';
   state.entryFontSize = clamp(Number(state.entryFontSize) || 14, 10, 24);
@@ -1169,8 +1174,7 @@ function initLockLottie() {
       setLockLottieState(state.icebergLocked === true, false);
     });
     lockLottieAnim.addEventListener('enterFrame', () => {
-      if (lockLottieColorLocked !== state.icebergLocked) recolorLockLottie(state.icebergLocked === true);
-      else recolorLockLottie(state.icebergLocked === true);
+      recolorLockLottie(state.icebergLocked === true);
     });
     lockLottieAnim.addEventListener('data_failed', () => {
       lockLottieReady = false;
@@ -1348,12 +1352,17 @@ function updateIcebergSearchCount() {
   const query = icebergSearchTerm.trim();
   if (!query) {
     els.icebergSearchCount.textContent = '';
-    els.icebergSearchCount.classList.remove('has-results');
+    els.icebergSearchCount.classList.remove('has-results', 'no-results');
     return;
   }
   const count = state.items.filter(itemMatchesIcebergSearch).length;
-  els.icebergSearchCount.textContent = count === 1 ? '1 iceberg match' : `${count} iceberg matches`;
+  if (count === 0) {
+    els.icebergSearchCount.textContent = `No matches for “${query}”`;
+  } else {
+    els.icebergSearchCount.textContent = count === 1 ? '1 iceberg match' : `${count} iceberg matches`;
+  }
   els.icebergSearchCount.classList.toggle('has-results', count > 0);
+  els.icebergSearchCount.classList.toggle('no-results', count === 0);
 }
 
 function applyIcebergSearchVisuals() {
@@ -1820,8 +1829,20 @@ function chartBannerEditingAllowed() {
   return !icebergEditingLocked();
 }
 
+function setChartBannerMenuOpen(open = false) {
+  const titleRow = document.querySelector('.sidebar-chart-title-row');
+  const isOpen = !!open && chartBannerEditingAllowed();
+  titleRow?.classList.toggle('chart-banner-menu-open', isOpen);
+  els.chartBannerMenuToggle?.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+}
+
+function closeChartBannerMenu() {
+  setChartBannerMenuOpen(false);
+}
+
 function syncChartBannerUi() {
   const hasBanner = !!safeUrl(state.bannerImage || '');
+  const editingAllowed = chartBannerEditingAllowed();
   const titleRow = document.querySelector('.sidebar-chart-title-row');
   titleRow?.classList.toggle('has-chart-banner', hasBanner);
   if (els.chartBannerWrap) els.chartBannerWrap.hidden = !hasBanner;
@@ -1829,12 +1850,20 @@ function syncChartBannerUi() {
     if (hasBanner) els.chartBannerImg.src = state.bannerImage;
     else els.chartBannerImg.removeAttribute('src');
   }
+  if (els.chartBannerMenuToggle) els.chartBannerMenuToggle.disabled = !editingAllowed;
   if (els.chartBannerAdd) {
-    els.chartBannerAdd.classList.toggle('is-visible', !hasBanner && chartBannerEditingAllowed());
-    els.chartBannerAdd.hidden = hasBanner || !chartBannerEditingAllowed();
+    els.chartBannerAdd.hidden = hasBanner || !editingAllowed;
+    els.chartBannerAdd.disabled = !editingAllowed;
   }
-  if (els.chartBannerReplace) els.chartBannerReplace.disabled = !chartBannerEditingAllowed();
-  if (els.chartBannerRemove) els.chartBannerRemove.disabled = !chartBannerEditingAllowed();
+  if (els.chartBannerReplace) {
+    els.chartBannerReplace.hidden = !hasBanner || !editingAllowed;
+    els.chartBannerReplace.disabled = !editingAllowed;
+  }
+  if (els.chartBannerRemove) {
+    els.chartBannerRemove.hidden = !hasBanner || !editingAllowed;
+    els.chartBannerRemove.disabled = !editingAllowed;
+  }
+  if (!editingAllowed) closeChartBannerMenu();
   adjustChartTitleLayout();
 }
 
@@ -1842,7 +1871,7 @@ function measureChartTitleWidth(text, fontSize, fontFamily, fontWeight) {
   const canvas = measureChartTitleWidth.canvas || (measureChartTitleWidth.canvas = document.createElement('canvas'));
   const ctx = canvas.getContext('2d');
   if (!ctx) return 0;
-  ctx.font = `${fontWeight || 900} ${fontSize}px ${fontFamily || 'Trebuchet MS, Arial, sans-serif'}`;
+  ctx.font = `${fontWeight || 400} ${fontSize}px ${fontFamily || "'Casino Flat', 'Trebuchet MS', Arial, sans-serif"}`;
   return ctx.measureText(String(text || '')).width;
 }
 
@@ -1855,8 +1884,8 @@ function adjustChartTitleLayout() {
   const availableWidth = Math.max(60, width);
   const family = computed.fontFamily || "'Trebuchet MS', Arial, sans-serif";
   const weight = computed.fontWeight || '900';
-  const maxSize = 28;
-  const minSize = 17;
+  const maxSize = 31;
+  const minSize = 16;
   const lines = String(els.title.value || state.title || '').split(/\r?\n/).map(line => line.trim()).filter(Boolean);
   const longestWidth = Math.max(0, ...lines.map(line => measureChartTitleWidth(line, maxSize, family, weight)));
   const fittedSize = longestWidth > availableWidth
@@ -1869,6 +1898,7 @@ function adjustChartTitleLayout() {
 
 function openChartBannerPicker() {
   if (!chartBannerEditingAllowed()) return;
+  closeChartBannerMenu();
   els.bannerImageFile?.click();
 }
 
@@ -1885,6 +1915,7 @@ async function setChartBannerImage(file) {
 
 function removeChartBannerImage() {
   if (!chartBannerEditingAllowed()) return;
+  closeChartBannerMenu();
   state.bannerImage = '';
   syncChartBannerUi();
   scheduleAutosave();
@@ -2043,8 +2074,7 @@ async function setTierLabelImage(tierId, file) {
       title: 'Could not add layer image',
       copy: err?.message || 'Use a valid image file.',
       lines: [],
-      tone: 'error',
-      autoHide: true
+      tone: 'error'
     });
   }
 }
@@ -2139,7 +2169,7 @@ function renderTiers(animateEntries = false) {
     menuToggle.dataset.tierId = tier.id;
     menuToggle.setAttribute('aria-label', `Layer image options for ${tier.label || 'layer'}`);
     menuToggle.setAttribute('aria-expanded', activeTierImageMenuId === tier.id ? 'true' : 'false');
-    menuToggle.textContent = '⋮';
+    menuToggle.innerHTML = '<svg class="btn-glyph btn-glyph-dots" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="5" r="1.7" fill="currentColor"/><circle cx="12" cy="12" r="1.7" fill="currentColor"/><circle cx="12" cy="19" r="1.7" fill="currentColor"/></svg>';
     imageControls.appendChild(menuToggle);
 
     const menu = document.createElement('div');
@@ -2193,7 +2223,22 @@ function renderPool() {
   if (!unplaced.length) {
     const empty = document.createElement('div');
     empty.className = 'unplaced-empty';
-    empty.textContent = 'No unplaced items.';
+
+    const title = document.createElement('div');
+    title.className = 'unplaced-empty-title';
+    title.textContent = 'No unplaced items.';
+    empty.appendChild(title);
+
+    const copy = document.createElement('div');
+    copy.className = 'unplaced-empty-copy';
+    if (icebergEditingLocked()) {
+      copy.textContent = 'Unlock editing to add entries.';
+    } else if (state.items.length) {
+      copy.textContent = 'Everything has been placed on the iceberg.';
+    } else {
+      copy.textContent = 'Add a new entry above, or load a ZIP backup.';
+    }
+    empty.appendChild(copy);
     fragment.appendChild(empty);
   } else {
     unplaced.forEach(item => fragment.appendChild(makeChip(item)));
@@ -2334,26 +2379,37 @@ function endFluidDrag(commit = true, clientX = null, clientY = null) {
 
   const movedEnough = Math.abs(drag.dx) > 3 || Math.abs(drag.dy) > 3;
 
-  if (commit && movedEnough) {
-    const dropTarget = clientX != null && clientY != null ? document.elementFromPoint(clientX, clientY) : null;
-    const droppedOnPool = dropTarget?.closest?.('.unplaced-pool');
+  // Where did the pointer come up? Three outcomes:
+  //   • over the iceberg canvas  → move the chip(s) there
+  //   • over the entry tray      → send the chip(s) back to Unplaced
+  //   • anywhere else            → snap back to where they started
+  const wrapperRect = els.wrapper?.getBoundingClientRect?.();
+  const releasedOverCanvas = !!wrapperRect && clientX != null && clientY != null
+    && clientX >= wrapperRect.left && clientX <= wrapperRect.right
+    && clientY >= wrapperRect.top && clientY <= wrapperRect.bottom;
+  const dropTarget = (clientX != null && clientY != null) ? document.elementFromPoint(clientX, clientY) : null;
+  const releasedOverPool = !releasedOverCanvas && !!dropTarget?.closest?.('.unplaced-pool');
 
-    if (droppedOnPool) {
-      drag.entries.forEach(entry => {
-        const item = getItemById(entry.id);
-        if (item) removeItemToPool(item);
-      });
-    } else {
-      drag.entries.forEach(entry => {
-        const item = getItemById(entry.id);
-        if (item) applyItemCanvasPosition(item, entry.start.x + drag.dx, entry.start.y + drag.dy, entry.width, entry.height);
-      });
-    }
-
+  if (commit && movedEnough && releasedOverCanvas) {
+    drag.entries.forEach(entry => {
+      const item = getItemById(entry.id);
+      if (item) applyItemCanvasPosition(item, entry.start.x + drag.dx, entry.start.y + drag.dy, entry.width, entry.height);
+    });
+    selectionMoved = true;
+    selectedItemIds.clear();
+    render();
+  } else if (commit && movedEnough && releasedOverPool) {
+    drag.entries.forEach(entry => {
+      const item = getItemById(entry.id);
+      if (item) removeItemToPool(item);
+    });
     selectionMoved = true;
     selectedItemIds.clear();
     render();
   } else {
+    // Removing the drag offsets above already returns each chip to its stored
+    // position; suppress the click that would otherwise follow a real drag.
+    if (commit && movedEnough) selectionMoved = true;
     renderSelection();
   }
 }
@@ -2470,7 +2526,7 @@ function makeDragGhost(chip, item) {
   dragGhost.textContent = item?.name || textEl?.textContent || chip.textContent.trim();
 
   Object.assign(dragGhost.style, {
-    fontFamily: chipStyles.fontFamily,
+    fontFamily: textStyles.fontFamily || chipStyles.fontFamily,
     fontSize: textStyles.fontSize,
     fontWeight: chipStyles.fontWeight,
     letterSpacing: chipStyles.letterSpacing,
@@ -3503,7 +3559,11 @@ function updateConsolePopupAnchor() {
   if (!popup || !indicator) return;
   const indicatorRect = indicator.getBoundingClientRect();
   if (!indicatorRect.width) return;
-  const pointerRight = Math.max(13, Math.round(indicatorRect.width / 2 - 6));
+  // Aim the pointer at the centre of the indicator, but keep it inside the
+  // popup so a long status message can't push it off the edge.
+  const popupWidth = popup.clientWidth || 280;
+  const maxRight = Math.max(13, popupWidth - 20);
+  const pointerRight = clamp(Math.round(indicatorRect.width / 2 - 6), 13, maxRight);
   popup.style.setProperty('--log-pointer-right', `${pointerRight}px`);
 }
 
@@ -3621,6 +3681,7 @@ function restoreAutosave() {
   entryLoadAnimationPending = true;
   render();
   renderDetailPanel();
+  revealIcebergFromBlueprint({ delay: 120 });
   writeAutosaveNow();
   setSidebarStatus('Autosave restored. Tier images included, entry images require a ZIP export.');
 }
@@ -3629,6 +3690,7 @@ function startFreshAutosave() {
   pendingAutosavePayload = null;
   hideAutosavePrompt();
   autosaveReady = true;
+  revealIcebergFromBlueprint({ delay: 120 });
   setAutosaveIndicator('saved', 'Started blank');
 }
 
@@ -4134,6 +4196,7 @@ async function loadState(event) {
     entryLoadAnimationPending = true;
     render();
     renderDetailPanel();
+    revealIcebergFromBlueprint({ delay: 80 });
     writeAutosaveNow();
     const r = result.report;
     showLoadNotice(r);
@@ -4146,8 +4209,7 @@ async function loadState(event) {
       title: 'Could not load ZIP',
       copy: message,
       lines: ['Your current iceberg was not changed.'],
-      tone: 'error',
-      autoHide: false
+      tone: 'error'
     });
     setSidebarStatus(`Could not load file — ${message}`, true);
   } finally {
@@ -4338,7 +4400,7 @@ async function exportImageWithCanvasRenderer() {
   ctx.fillStyle = '#0a0e1a';
   ctx.fillRect(0, 0, canvasW, canvasH);
 
-  const bg = await loadExportImage('iceberg-bg.webp');
+  const bg = await loadExportImage('images/iceberg-bg.webp');
   if (bg) {
     ctx.save();
     const blur = clamp(Number(state.bgBlur) || 0, 0, 2);
@@ -4432,8 +4494,7 @@ function exportImage() {
       title: 'Could not export PNG',
       copy: 'The browser could not generate the PNG. Your iceberg was not changed.',
       lines: [err?.message ? `Reason: ${err.message}` : 'Try refreshing the page, then export again.'],
-      tone: 'error',
-      autoHide: false
+      tone: 'error'
     });
   };
 
@@ -4725,6 +4786,7 @@ function initFileMenuAndEntryInput() {
     adjustChartTitleLayout();
   });
   window.addEventListener('resize', adjustChartTitleLayout);
+  if (document.fonts?.ready) document.fonts.ready.then(adjustChartTitleLayout).catch(() => {});
   $('save-zip-btn')?.addEventListener('click', () => { closeAppMenu(); saveZipState(); });
   $('load-zip-btn')?.addEventListener('click', () => {
     closeAppMenu();
@@ -4737,9 +4799,20 @@ function initFileMenuAndEntryInput() {
     e.target.value = '';
     if (file) setChartBannerImage(file);
   });
-  els.chartBannerAdd?.addEventListener('click', openChartBannerPicker);
-  els.chartBannerReplace?.addEventListener('click', openChartBannerPicker);
-  els.chartBannerRemove?.addEventListener('click', removeChartBannerImage);
+  els.chartBannerMenuToggle?.addEventListener('click', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!chartBannerEditingAllowed()) return;
+    closeTierImageMenu();
+    const titleRow = document.querySelector('.sidebar-chart-title-row');
+    setChartBannerMenuOpen(!titleRow?.classList.contains('chart-banner-menu-open'));
+  });
+  els.chartBannerAdd?.addEventListener('click', e => { e.stopPropagation(); openChartBannerPicker(); });
+  els.chartBannerReplace?.addEventListener('click', e => { e.stopPropagation(); openChartBannerPicker(); });
+  els.chartBannerRemove?.addEventListener('click', e => { e.stopPropagation(); removeChartBannerImage(); });
+  document.addEventListener('click', e => {
+    if (!e.target.closest?.('.chart-banner-menu-controls')) closeChartBannerMenu();
+  });
 
   els.tierImageFile?.addEventListener('change', e => {
     const file = e.target.files?.[0];
@@ -4798,7 +4871,6 @@ function initIcebergLock() {
     state.icebergLocked = !state.icebergLocked;
     if (state.icebergLocked) {
       endFluidDrag(false);
-      clearSelection();
       closeTierImageMenu();
       setTierImageMoveMode(null);
       if (els.detailCard?.classList.contains('description-editing')) {
@@ -4817,9 +4889,18 @@ function initIcebergLock() {
     }
     applyIcebergLockSetting({ syncAnimation: false });
     setLockLottieState(state.icebergLocked === true, true);
+    const hadRandomHighlight = document.body.classList.contains('has-random-highlight');
+    const randomHighlightId = hadRandomHighlight ? currentItemId : null;
     renderTiers();
     renderPool();
     if (currentItemId) renderDetailPanel();
+    if (hadRandomHighlight && randomHighlightId) {
+      const chip = document.querySelector(itemChipSelector(randomHighlightId, true));
+      if (chip) {
+        chip.classList.add('random-highlight');
+        document.body.classList.add('has-random-highlight');
+      }
+    }
     triggerIcebergLockPulse(state.icebergLocked === true);
     scheduleAutosave();
   });
@@ -4844,6 +4925,68 @@ function initEntryDriftHover() {
   });
   els.wrapper?.addEventListener('pointerleave', () => clearEntryDriftOffsets());
   els.wrapper?.addEventListener('pointercancel', () => clearEntryDriftOffsets());
+}
+
+function initCreatorLogoWaterMotion() {
+  const sidebar = els.leftSidebar;
+  const brand = sidebar?.querySelector('.sidebar-brand');
+  const logo = brand?.querySelector('.sidebar-brand-img');
+  if (!sidebar || !brand || !logo) return;
+  if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+
+  let raf = 0;
+  let pointer = null;
+  const clear = () => {
+    pointer = null;
+    brand.style.setProperty('--creator-logo-drift-x', '0px');
+    brand.style.setProperty('--creator-logo-drift-y', '0px');
+    brand.style.setProperty('--creator-logo-drift-scale', '1');
+  };
+  const update = () => {
+    raf = 0;
+    if (!pointer || !document.body.contains(logo) || sidebar.classList.contains('collapsed')) {
+      clear();
+      return;
+    }
+
+    const rect = logo.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const dx = pointer.x - cx;
+    const dy = pointer.y - cy;
+    const centerDist = Math.hypot(dx, dy);
+    const nearestX = clamp(pointer.x, rect.left, rect.right);
+    const nearestY = clamp(pointer.y, rect.top, rect.bottom);
+    const edgeDist = Math.hypot(pointer.x - nearestX, pointer.y - nearestY);
+    const softStrength = Math.exp(-Math.pow(edgeDist / 54, 2));
+    const isInside = pointer.x >= rect.left && pointer.x <= rect.right && pointer.y >= rect.top && pointer.y <= rect.bottom;
+    const insideDirectionFactor = isInside
+      ? clamp(centerDist / Math.max(18, Math.min(rect.width, rect.height) * .7), 0, 1)
+      : 1;
+    const strength = softStrength * insideDirectionFactor;
+    if (strength < .008 || centerDist < .75) {
+      brand.style.setProperty('--creator-logo-drift-x', '0px');
+      brand.style.setProperty('--creator-logo-drift-y', '0px');
+      brand.style.setProperty('--creator-logo-drift-scale', '1');
+      return;
+    }
+
+    const pull = strength * 4.2;
+    brand.style.setProperty('--creator-logo-drift-x', `${(dx / centerDist * pull).toFixed(2)}px`);
+    brand.style.setProperty('--creator-logo-drift-y', `${(dy / centerDist * pull).toFixed(2)}px`);
+    brand.style.setProperty('--creator-logo-drift-scale', (1 + .006 * strength).toFixed(4));
+  };
+  const schedule = () => {
+    if (!raf) raf = requestAnimationFrame(update);
+  };
+
+  sidebar.addEventListener('pointermove', event => {
+    if (event.pointerType === 'touch') return;
+    pointer = { x: event.clientX, y: event.clientY };
+    schedule();
+  }, { passive: true });
+  sidebar.addEventListener('pointerleave', clear);
+  sidebar.addEventListener('pointercancel', clear);
 }
 
 function initSidebarCollapse() {
@@ -5259,7 +5402,7 @@ function initImageModal() {
   els.imageModalNext?.addEventListener('click', () => showAdjacentImagePreview(1));
   els.imageModal?.addEventListener('keydown', e => {
     if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
-    if (e.target && (e.target.closest?.('textarea, [contenteditable="true"'))) return;
+    if (e.target && (e.target.closest?.('textarea, [contenteditable="true"]'))) return;
     e.preventDefault();
     showAdjacentImagePreview(e.key === 'ArrowLeft' ? -1 : 1);
   });
@@ -5381,8 +5524,6 @@ const mobileSearchPlacement = {
   titlePlaceholder: null,
   searchPlaceholder: null,
 };
-let mobileDetailsReturnPanel = 'none';
-let linkedEntryBackStack = [];
 
 function mobileLayoutActive() {
   const vvWidth = window.visualViewport?.width || Infinity;
@@ -5616,6 +5757,62 @@ function initMobileLayout() {
   updateMobileIcebergScale();
 }
 
+
+
+
+function revealIcebergFromBlueprint(options = {}) {
+  const delay = Math.max(0, Number(options.delay) || 0);
+  window.setTimeout(() => {
+    document.body.classList.remove('app-waiting-for-save');
+    document.body.classList.remove('app-iceberg-revealing');
+    // Restart the placement animation when a ZIP/autosave is loaded after boot.
+    void document.body.offsetWidth;
+    document.body.classList.add('app-iceberg-revealing');
+    window.setTimeout(() => {
+      document.body.classList.remove('app-iceberg-revealing');
+    }, 980);
+  }, delay);
+}
+
+function appWaitingForSaveChoice() {
+  return document.body.classList.contains('app-waiting-for-save');
+}
+
+function finishAppLoader() {
+  const loader = document.getElementById('app-loader');
+  if (!loader) return;
+  const minimumVisibleMs = 1550;
+  const startedAt = Number(window.__interactiveIcebergLoaderStartedAt || 0);
+  const elapsed = startedAt ? performance.now() - startedAt : 0;
+  const wait = Math.max(0, minimumVisibleMs - elapsed);
+  window.setTimeout(() => {
+    loader.classList.add('is-done');
+    window.setTimeout(() => {
+      const autosaveModal = $('autosave-modal');
+      const shouldRevealAutosave = !!(autosaveModal && !autosaveModal.hidden);
+      if (shouldRevealAutosave) {
+        document.body.classList.add('app-waiting-for-save');
+        autosaveModal.classList.add('boot-delayed');
+      }
+      document.body.classList.add('app-revealing');
+      document.body.classList.remove('app-booting');
+      if (shouldRevealAutosave) {
+        window.setTimeout(() => {
+          autosaveModal.classList.remove('boot-delayed', 'is-opening', 'is-closing');
+          void autosaveModal.offsetWidth;
+          autosaveModal.classList.add('is-opening');
+        }, 300);
+      } else {
+        revealIcebergFromBlueprint({ delay: 120 });
+      }
+      window.setTimeout(() => {
+        document.body.classList.add('app-loaded');
+        document.body.classList.remove('app-revealing');
+        loader.remove();
+      }, 720);
+    }, 340);
+  }, wait);
+}
 /* ── Init ── */
 showDetailSidebar();
 initLockLottie();
@@ -5625,6 +5822,7 @@ initDisplaySettings();
 initIcebergLock();
 initIcebergSearch();
 initEntryDriftHover();
+initCreatorLogoWaterMotion();
 initSidebarCollapse();
 initTierInteraction();
 initSelectionAndDrag();
@@ -5644,3 +5842,4 @@ render();
 renderDetailPanel();
 updateMobileIcebergScale();
 scheduleSearchLinesUpdate();
+finishAppLoader();
