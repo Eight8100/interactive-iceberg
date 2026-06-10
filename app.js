@@ -1,4 +1,10 @@
 const TIER_BOUNDARIES = [0, 195, 391, 621.5, 827.5, 1037.5, 1224.5, 1425.5, 1626.5, 1843.5, 2048];
+
+// Mobile styling keys entirely off body.mobile-layout-active (no media
+// queries) — apply it immediately at script eval so the first paint after
+// the loader is already correct. mobileLayoutActive() is hoisted.
+if (mobileLayoutActive()) document.body.classList.add('mobile-layout-active');
+
 const DEFAULT_TIERS = [
   ['Sky', '#13a9e8'],
   ['Surface', '#0051ff'],
@@ -108,6 +114,7 @@ const els = {
   tierImageFile: $('tier-image-file'),
   bannerImageFile: $('banner-image-file'),
   pool: $('unplaced-pool'),
+  favouritesPool: $('favourites-pool'),
   tiers: $('tiers-container'),
   wrapper: $('iceberg-wrapper'),
   icebergSearch: $('iceberg-search'),
@@ -144,6 +151,7 @@ const els = {
   detailTitleError: $('detail-title-error'),
   detailTier: $('detail-tier'),
   detailNeedsVerification: $('detail-needs-verification'),
+  detailFavourite: $('detail-favourite-toggle'),
   detailVerificationStatic: $('detail-verification-static'),
   detailEditRow: $('detail-edit-row'),
   detailEditBtn: $('detail-edit-btn'),
@@ -1042,6 +1050,7 @@ function normalizeState() {
     item.name = String(item.name || '').trim() || 'Untitled';
     item.description = String(item.description || '');
     item.needsVerification = item.needsVerification === true || item.needsVerification === 'true';
+    item.favourite = item.favourite === true || item.favourite === 'true';
     normalizeItemImages(item);
     if (/!\[[^\]]*\]\([^)]+\)/.test(item.description)) {
       const extracted = extractMarkdownImages(item.description);
@@ -1829,11 +1838,35 @@ function chartBannerEditingAllowed() {
   return !icebergEditingLocked();
 }
 
+let chartBannerMenuOpenState = false;
+
 function setChartBannerMenuOpen(open = false) {
   const titleRow = document.querySelector('.sidebar-chart-title-row');
+  const menu = els.chartBannerMenu;
   const isOpen = !!open && chartBannerEditingAllowed();
-  titleRow?.classList.toggle('chart-banner-menu-open', isOpen);
   els.chartBannerMenuToggle?.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  if (!titleRow) return;
+  const wasOpen = chartBannerMenuOpenState;
+  chartBannerMenuOpenState = isOpen;
+  if (isOpen === wasOpen) {
+    // Reopened while the close fade was still pending — cancel it.
+    if (isOpen && menu?.classList.contains('is-closing')) {
+      clearElementFadeTimer(menu);
+      menu.classList.remove('is-closing');
+    }
+    return;
+  }
+  if (isOpen) {
+    if (menu) {
+      clearElementFadeTimer(menu);
+      menu.classList.remove('is-closing');
+    }
+    titleRow.classList.add('chart-banner-menu-open');
+  } else if (menu) {
+    playClosingAnimation(menu, () => titleRow.classList.remove('chart-banner-menu-open'));
+  } else {
+    titleRow.classList.remove('chart-banner-menu-open');
+  }
 }
 
 function closeChartBannerMenu() {
@@ -1953,9 +1986,29 @@ function setTierImageMenuOpen(tierId = null) {
   activeTierImageMenuId = tierId;
   document.querySelectorAll('.tier-label-cell').forEach(cell => {
     const isOpen = !!tierId && cell.dataset.tierId === tierId;
-    cell.classList.toggle('tier-image-menu-open', isOpen);
+    const wasOpen = cell.classList.contains('tier-image-menu-open');
     const toggle = cell.querySelector('.tier-image-menu-toggle');
     if (toggle) toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    const menu = cell.querySelector('.tier-image-menu');
+    if (isOpen === wasOpen) {
+      // Reopened while the close fade was still pending — cancel it.
+      if (isOpen && menu?.classList.contains('is-closing')) {
+        clearElementFadeTimer(menu);
+        menu.classList.remove('is-closing');
+      }
+      return;
+    }
+    if (isOpen) {
+      if (menu) {
+        clearElementFadeTimer(menu);
+        menu.classList.remove('is-closing');
+      }
+      cell.classList.add('tier-image-menu-open');
+    } else if (menu) {
+      playClosingAnimation(menu, () => cell.classList.remove('tier-image-menu-open'));
+    } else {
+      cell.classList.remove('tier-image-menu-open');
+    }
   });
 }
 
@@ -2244,6 +2297,8 @@ function renderPool() {
     unplaced.forEach(item => fragment.appendChild(makeChip(item)));
   }
   els.pool.appendChild(fragment);
+  requestAnimationFrame(updateUnplacedScrollHints);
+  renderFavourites();
 }
 
 function makeChip(item, itemIndex = 0, entryLoadRank = null) {
@@ -2327,7 +2382,7 @@ function addItem() {
     els.newName.select();
     return;
   }
-  state.items.push({ id: uid(), name, description: '', images: [], needsVerification: false, tierId: null });
+  state.items.push({ id: uid(), name, description: '', images: [], needsVerification: false, favourite: false, tierId: null });
   els.newName.value = '';
   showAddError('');
   els.newName.focus();
@@ -2641,12 +2696,6 @@ function renderDetailTierBadge(tier, fallbackLabel = 'Unplaced') {
   els.detailTier.classList.toggle('has-tier-image', showTierImageBadge);
 
   if (tier) {
-    const swatch = document.createElement('span');
-    swatch.className = 'detail-tier-swatch';
-    swatch.style.background = tier.color || 'transparent';
-    swatch.setAttribute('aria-hidden', 'true');
-    els.detailTier.appendChild(swatch);
-
     if (showTierImageBadge) {
       const img = document.createElement('img');
       img.className = 'detail-tier-image-thumb';
@@ -2682,6 +2731,7 @@ function renderDetailPanel() {
     showDetailTitleError('');
     if (els.detailNeedsVerification) els.detailNeedsVerification.checked = false;
     if (els.detailVerificationStatic) els.detailVerificationStatic.hidden = true;
+    syncFavouriteToggle(null);
     if (els.detailEditRow) els.detailEditRow.hidden = true;
     if (els.detailEditBtn) els.detailEditBtn.hidden = true;
     if (els.detailDoneBtn) els.detailDoneBtn.hidden = true;
@@ -2724,6 +2774,7 @@ function renderDetailPanel() {
   renderDetailTierBadge(tier, lastTierLabel ? lastTierLabel : 'Unplaced');
   if (els.detailNeedsVerification) els.detailNeedsVerification.checked = !!item.needsVerification;
   if (els.detailVerificationStatic) els.detailVerificationStatic.hidden = !item.needsVerification;
+  syncFavouriteToggle(item);
   const editingLocked = icebergEditingLocked();
   if (els.detailEditRow) els.detailEditRow.hidden = editingLocked;
   if (els.detailEditBtn) els.detailEditBtn.hidden = editingLocked;
@@ -2809,9 +2860,10 @@ function openModal(itemId) {
   currentItemId = item.id;
   renderSelection();
   renderDetailPanel();
+  renderFavourites();
   showDetailSidebar();
   if (mobileLayoutActive()) {
-    const keepSearchOpen = !$('mobile-search-sheet')?.hidden;
+    const keepSearchOpen = mobileSearchSheetOpen;
     setMobilePanel('details', { keepSearchOpen });
   }
   return true;
@@ -3451,6 +3503,118 @@ function openInternalEntryLink(link) {
   syncLinkedEntryBackButton();
 }
 
+function syncFavouriteToggle(item) {
+  const btn = els.detailFavourite;
+  if (!btn) return;
+  const on = !!(item && item.favourite);
+  btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  btn.classList.toggle('is-favourite', on);
+  const label = on ? 'Remove from favourites' : 'Add to favourites';
+  btn.setAttribute('aria-label', label);
+  btn.title = label;
+  btn.disabled = !item;
+}
+
+function toggleCurrentFavourite() {
+  const item = getCurrentItem();
+  if (!item) return;
+  item.favourite = !item.favourite;
+  syncFavouriteToggle(item);
+  renderFavourites();
+  scheduleAutosave();
+}
+
+function updateListScrollHints(pool) {
+  if (!pool) return;
+  const overflow = pool.scrollHeight - pool.clientHeight > 2;
+  const atTop = pool.scrollTop <= 1;
+  const atBottom = pool.scrollTop + pool.clientHeight >= pool.scrollHeight - 1;
+  pool.classList.toggle('has-overflow', overflow);
+  pool.classList.toggle('fade-top', overflow && !atTop);
+  pool.classList.toggle('fade-bottom', overflow && !atBottom);
+}
+
+function updateFavouritesScrollHints() {
+  updateListScrollHints(els.favouritesPool);
+}
+
+function updateUnplacedScrollHints() {
+  updateListScrollHints(els.pool);
+}
+
+function flashPlacedEntry(itemId) {
+  window.clearTimeout(randomHighlightTimer);
+  randomHighlightTimer = window.setTimeout(() => {
+    if (currentItemId !== itemId) return;
+    const chip = document.querySelector(itemChipSelector(itemId, true));
+    if (!chip) return;
+    chip.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    chip.classList.add('random-highlight');
+    document.body.classList.add('has-random-highlight');
+    randomHighlightTimer = 0;
+  }, 50);
+}
+
+function openPlacedEntryShortcut(itemId) {
+  const item = getItemById(itemId);
+  if (!item || !item.tierId) return false;
+  selectedItemIds = new Set([item.id]);
+  if (!openModal(item.id)) return false;
+  selectedItemIds = new Set([item.id]);
+  renderSelection();
+  renderFavourites();
+  flashPlacedEntry(item.id);
+  return true;
+}
+
+function renderFavourites() {
+  if (!els.favouritesPool) return;
+  els.favouritesPool.innerHTML = '';
+  // Favourites lists placed entries only — a quick-jump shortlist.
+  const favourites = state.items
+    .filter(item => item.favourite && item.tierId)
+    .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), undefined, { sensitivity: 'base', numeric: true }));
+  if (!favourites.length) {
+    const empty = document.createElement('div');
+    empty.className = 'favourites-empty';
+    empty.textContent = 'Star a placed entry to pin it here.';
+    els.favouritesPool.appendChild(empty);
+    requestAnimationFrame(updateFavouritesScrollHints);
+    return;
+  }
+  const fragment = document.createDocumentFragment();
+  favourites.forEach(item => {
+    const row = document.createElement('button');
+    row.type = 'button';
+    row.className = 'favourite-chip';
+    row.dataset.itemId = item.id;
+    if (item.id === currentItemId) row.classList.add('is-current');
+    const tier = getTierById(item.tierId);
+
+    const star = document.createElement('span');
+    star.className = 'favourite-chip-star';
+    star.setAttribute('aria-hidden', 'true');
+    star.innerHTML = '<svg viewBox="0 0 24 24" focusable="false"><path d="M12 2.6l2.9 5.88 6.49.94-4.7 4.58 1.11 6.46L12 17.97l-5.8 3.05 1.11-6.46-4.7-4.58 6.49-.94z"/></svg>';
+
+    const name = document.createElement('span');
+    name.className = 'favourite-chip-name';
+    name.textContent = item.name;
+
+    row.appendChild(star);
+    row.appendChild(name);
+    if (tier?.label) {
+      const tierTag = document.createElement('span');
+      tierTag.className = 'favourite-chip-tier';
+      tierTag.textContent = tier.label;
+      row.appendChild(tierTag);
+    }
+    row.setAttribute('aria-label', `${item.name}${tier?.label ? `, ${tier.label}` : ''}`);
+    fragment.appendChild(row);
+  });
+  els.favouritesPool.appendChild(fragment);
+  requestAnimationFrame(updateFavouritesScrollHints);
+}
+
 function toggleCurrentVerification() {
   if (icebergEditingLocked()) return;
   const item = getCurrentItem();
@@ -3559,11 +3723,16 @@ function updateConsolePopupAnchor() {
   if (!popup || !indicator) return;
   const indicatorRect = indicator.getBoundingClientRect();
   if (!indicatorRect.width) return;
-  // Aim the pointer at the centre of the indicator, but keep it inside the
-  // popup so a long status message can't push it off the edge.
-  const popupWidth = popup.clientWidth || 280;
+  // Aim the pointer at the centre of the indicator using viewport rects so
+  // the math holds for both the desktop (absolute) and mobile (fixed)
+  // popup positions, clamped inside the popup so long status messages
+  // can't push it off the edge.
+  const popupRect = popup.getBoundingClientRect();
+  const popupWidth = popupRect.width || popup.clientWidth || 280;
+  const popupRight = popupRect.width ? popupRect.right : indicatorRect.right;
+  const anchorX = indicatorRect.left + indicatorRect.width / 2;
   const maxRight = Math.max(13, popupWidth - 20);
-  const pointerRight = clamp(Math.round(indicatorRect.width / 2 - 6), 13, maxRight);
+  const pointerRight = clamp(Math.round(popupRight - anchorX - 6), 13, maxRight);
   popup.style.setProperty('--log-pointer-right', `${pointerRight}px`);
 }
 
@@ -3575,10 +3744,9 @@ function toggleConsolePopup() {
     closeConsolePopup();
     return;
   }
-  closeAppMenu();
-  closeAboutModal();
-  updateConsolePopupAnchor();
+  closeFloatingPopups('console');
   showElementWithFade(popup);
+  updateConsolePopupAnchor();
   indicator?.setAttribute('aria-expanded', 'true');
 }
 
@@ -4238,6 +4406,12 @@ function loadExportImage(src) {
   return new Promise(resolve => {
     if (!src) { resolve(null); return; }
     const img = new Image();
+    // Anything that isn't an inline data:/blob: source gets CORS mode so it
+    // can never taint the canvas. Same-origin loads are unaffected; sources
+    // that can't satisfy CORS (e.g. running from file://) fail to load and
+    // resolve null, letting the export fall back instead of throwing
+    // "Tainted canvases may not be exported" at toBlob time.
+    if (!/^(data|blob):/i.test(src)) img.crossOrigin = 'anonymous';
     img.onload = () => resolve(img);
     img.onerror = () => resolve(null);
     img.src = src;
@@ -4407,6 +4581,20 @@ async function exportImageWithCanvasRenderer() {
     if (blur > 0 && 'filter' in ctx) ctx.filter = `blur(${blur}px)`;
     ctx.drawImage(bg, 0, 0, canvasW, canvasH);
     ctx.restore();
+  } else {
+    // Background image unavailable (e.g. opened via file://): approximate
+    // the ocean with a vertical gradient through the tier colours so the
+    // export still reads as an iceberg chart.
+    const grad = ctx.createLinearGradient(0, 0, 0, canvasH);
+    const tiers = state.tiers?.length ? state.tiers : [];
+    if (tiers.length > 1) {
+      tiers.forEach((tier, i) => grad.addColorStop(i / (tiers.length - 1), parseCanvasColor(tier.color, '#0a0e1a')));
+    } else {
+      grad.addColorStop(0, '#13a9e8');
+      grad.addColorStop(1, '#000000');
+    }
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, canvasW, canvasH);
   }
 
   // Match the subtle de-vignette overlay used on the first image band.
@@ -4649,7 +4837,22 @@ function setHeaderMenuExpanded(menu, expanded) {
   menu?.querySelector('summary')?.setAttribute('aria-expanded', expanded ? 'true' : 'false');
 }
 
+// Logical "which header menu is open" — menu.open lingers during the close
+// fade, so conditionals must not read it (same pattern as the sheet states).
+let openHeaderMenuEl = null;
+
+// Close every floating popup family except the named one. Every popup
+// opener funnels through this so popups are always mutually exclusive.
+function closeFloatingPopups(except = '') {
+  if (except !== 'header') closeAppMenu();
+  if (except !== 'console') closeConsolePopup();
+  if (except !== 'about') closeAboutModal();
+  if (except !== 'tier') closeTierImageMenu();
+  if (except !== 'banner') closeChartBannerMenu();
+}
+
 function closeAppMenu() {
+  openHeaderMenuEl = null;
   headerMenus().forEach(menu => {
     if (!menu.open) return;
     const summary = menu.querySelector('summary');
@@ -4671,9 +4874,9 @@ function closeAppMenu() {
 }
 
 function openMenu(menu) {
-  closeConsolePopup();
-  closeAboutModal();
-  closeAppMenu();
+  closeAppMenu(); // sibling header menu — the family 'except' below skips these
+  closeFloatingPopups('header');
+  openHeaderMenuEl = menu;
   const panel = menu.querySelector('.app-menu-panel');
   menu.open = true;
   setHeaderMenuExpanded(menu, true);
@@ -4681,8 +4884,7 @@ function openMenu(menu) {
 }
 
 function openAboutModal() {
-  closeConsolePopup();
-  closeAppMenu();
+  closeFloatingPopups('about');
   showElementWithFade(els.aboutModal);
   els.aboutBtn?.setAttribute('aria-expanded', 'true');
 }
@@ -4803,9 +5005,8 @@ function initFileMenuAndEntryInput() {
     e.preventDefault();
     e.stopPropagation();
     if (!chartBannerEditingAllowed()) return;
-    closeTierImageMenu();
-    const titleRow = document.querySelector('.sidebar-chart-title-row');
-    setChartBannerMenuOpen(!titleRow?.classList.contains('chart-banner-menu-open'));
+    if (!chartBannerMenuOpenState) closeFloatingPopups('banner');
+    setChartBannerMenuOpen(!chartBannerMenuOpenState);
   });
   els.chartBannerAdd?.addEventListener('click', e => { e.stopPropagation(); openChartBannerPicker(); });
   els.chartBannerReplace?.addEventListener('click', e => { e.stopPropagation(); openChartBannerPicker(); });
@@ -5017,8 +5218,10 @@ function initTierInteraction() {
       e.preventDefault();
       e.stopPropagation();
       const tierId = menuToggle.dataset.tierId || null;
+      const opening = activeTierImageMenuId !== tierId;
+      if (opening) closeFloatingPopups('tier');
       setTierImageMoveMode(null);
-      setTierImageMenuOpen(activeTierImageMenuId === tierId ? null : tierId);
+      setTierImageMenuOpen(opening ? tierId : null);
       return;
     }
     const action = e.target.closest?.('.tier-image-action');
@@ -5128,7 +5331,7 @@ function initChipAndInternalLinkInteraction() {
       if (!previous || !internalEntryLink.contains(previous)) showInternalEntryLinkLine(internalEntryLink);
     }
 
-    const chip = e.target.closest('.item-chip');
+    const chip = e.target.closest('.item-chip, .favourite-chip');
     if (!chip || e.target.closest('.chip-delete-btn') || entryPickMode) return;
     const previous = e.relatedTarget;
     if (previous && chip.contains(previous)) return;
@@ -5138,7 +5341,7 @@ function initChipAndInternalLinkInteraction() {
   document.addEventListener('mousemove', e => {
     updateEntryPickLineFromPointer(e);
     if (hoveredInternalLinkEl && !entryPickMode && !mobileLayoutActive()) scheduleSearchLinesUpdate();
-    if (e.target.closest('.item-chip') && !entryPickMode) moveHoverPreview(e);
+    if (e.target.closest('.item-chip, .favourite-chip') && !entryPickMode) moveHoverPreview(e);
     setDescriptionToolErrorPointFromEvent(e);
     if (els.entryLinkHint?.classList.contains('is-error')) positionDescriptionToolError(e.clientX, e.clientY);
   });
@@ -5150,7 +5353,7 @@ function initChipAndInternalLinkInteraction() {
       if (!next || !internalEntryLink.contains(next)) clearInternalEntryLinkLine();
     }
 
-    const chip = e.target.closest('.item-chip');
+    const chip = e.target.closest('.item-chip, .favourite-chip');
     if (!chip) return;
     const next = e.relatedTarget;
     if (next && chip.contains(next)) return;
@@ -5299,6 +5502,28 @@ function initDetailSidebar() {
   });
 
   els.detailNeedsVerification?.addEventListener('change', toggleCurrentVerification);
+  els.detailFavourite?.addEventListener('click', toggleCurrentFavourite);
+  els.favouritesPool?.addEventListener('click', e => {
+    const row = e.target.closest('.favourite-chip');
+    if (!row?.dataset.itemId) return;
+    e.preventDefault();
+    e.stopPropagation();
+    openPlacedEntryShortcut(row.dataset.itemId);
+  });
+  els.favouritesPool?.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const row = e.target.closest('.favourite-chip');
+    if (!row?.dataset.itemId) return;
+    e.preventDefault();
+    e.stopPropagation();
+    openPlacedEntryShortcut(row.dataset.itemId);
+  });
+  els.favouritesPool?.addEventListener('scroll', updateFavouritesScrollHints, { passive: true });
+  els.pool?.addEventListener('scroll', updateUnplacedScrollHints, { passive: true });
+  window.addEventListener('resize', () => {
+    requestAnimationFrame(updateFavouritesScrollHints);
+    requestAnimationFrame(updateUnplacedScrollHints);
+  });
   els.detailRemoveDelete?.addEventListener('click', removeOrDeleteCurrentItem);
 }
 
@@ -5431,21 +5656,10 @@ function initAboutAndRandom() {
     const pick = placed[Math.floor(Math.random() * placed.length)];
     clearIcebergSearch();
     linkedEntryBackStack = [];
-    selectedItemIds = new Set([pick.id]);
-    if (!openModal(pick.id)) return;
+    if (!openPlacedEntryShortcut(pick.id)) return;
     if (!searchWasOpen) closeMobileSearchSheet();
     if (mobileLayoutActive()) setMobilePanel('details', { keepSearchOpen: searchWasOpen });
     if (searchWasOpen) updateMobileSearchSheetMetrics();
-    window.clearTimeout(randomHighlightTimer);
-    randomHighlightTimer = window.setTimeout(() => {
-      if (currentItemId !== pick.id) return;
-      const chip = document.querySelector(itemChipSelector(pick.id, true));
-      if (!chip) return;
-      chip.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      chip.classList.add('random-highlight');
-      document.body.classList.add('has-random-highlight');
-      randomHighlightTimer = 0;
-    }, 50);
   });
   els.aboutModal?.addEventListener('click', e => {
     if (e.target === els.aboutModal) closeAboutModal();
@@ -5463,7 +5677,7 @@ function initHeaderMenusAndGlobalKeys() {
     summary?.addEventListener('pointerup', () => window.setTimeout(() => summary.blur?.(), 0));
     summary?.addEventListener('click', e => {
       e.preventDefault();
-      if (menu.open) {
+      if (openHeaderMenuEl === menu) {
         closeAppMenu();
         window.setTimeout(() => summary.blur?.(), 0);
       } else {
@@ -5525,6 +5739,12 @@ const mobileSearchPlacement = {
   searchPlaceholder: null,
 };
 
+// Logical open-state for the mobile bottom sheets. The DOM (hidden attr,
+// classes) is write-only presentation; conditionals must read these vars.
+// (A lingering class read during a close fade caused a real bug before.)
+let mobileSearchSheetOpen = false;
+let mobileFavouritesSheetOpen = false;
+
 function mobileLayoutActive() {
   const vvWidth = window.visualViewport?.width || Infinity;
   const coarseMobile = window.matchMedia?.('(pointer: coarse) and (max-width: 1100px)').matches;
@@ -5585,6 +5805,7 @@ function setMobilePanel(panelName = 'none', options = {}) {
   entriesBtn?.setAttribute('aria-expanded', String(entriesOpen));
   detailsBtn?.setAttribute('aria-expanded', String(detailsOpen));
   if (entriesOpen || detailsOpen) {
+    closeMobileFavouritesSheet();
     if (options.keepSearchOpen && detailsOpen) updateMobileSearchSheetMetrics();
     else closeMobileSearchSheet();
   }
@@ -5593,8 +5814,11 @@ function setMobilePanel(panelName = 'none', options = {}) {
 
 function updateMobileSearchSheetMetrics() {
   const sheet = $('mobile-search-sheet');
-  const root = document.documentElement;
-  const isOpen = !!sheet && !sheet.hidden && mobileLayoutActive();
+  // Mobile vars live as inline styles on <body>: stylesheet defaults are
+  // declared on body.mobile-layout-active, and inline beats stylesheet on
+  // the same element (declared on <html> they would be shadowed by body).
+  const root = document.body;
+  const isOpen = mobileSearchSheetOpen && !!sheet && mobileLayoutActive();
   document.body.classList.toggle('mobile-search-open', isOpen);
   if (!isOpen || !sheet) {
     root.style.removeProperty('--mobile-search-sheet-h');
@@ -5607,10 +5831,12 @@ function updateMobileSearchSheetMetrics() {
 function openMobileSearchSheet() {
   if (!mobileLayoutActive()) return;
   syncMobileSearchPlacement();
+  closeMobileFavouritesSheet();
   setMobilePanel('none');
   const sheet = $('mobile-search-sheet');
   const toggle = $('mobile-search-toggle');
   if (!sheet) return;
+  mobileSearchSheetOpen = true;
   sheet.hidden = false;
   updateMobileSearchSheetMetrics();
   toggle?.classList.add('active');
@@ -5619,6 +5845,7 @@ function openMobileSearchSheet() {
 }
 
 function closeMobileSearchSheet() {
+  mobileSearchSheetOpen = false;
   const sheet = $('mobile-search-sheet');
   const toggle = $('mobile-search-toggle');
   if (sheet) sheet.hidden = true;
@@ -5630,9 +5857,67 @@ function closeMobileSearchSheet() {
 }
 
 function toggleMobileSearchSheet() {
-  const sheet = $('mobile-search-sheet');
-  if (!sheet || sheet.hidden) openMobileSearchSheet();
-  else closeMobileSearchSheet();
+  if (mobileSearchSheetOpen) closeMobileSearchSheet();
+  else openMobileSearchSheet();
+}
+
+/* ── Mobile favourites sheet ── */
+const mobileFavouritesPlacement = {
+  initialized: false,
+  panel: null,
+  placeholder: null,
+};
+
+function syncMobileFavouritesPlacement() {
+  const sheetContent = $('mobile-favourites-sheet-content');
+  if (!sheetContent) return;
+
+  if (!mobileFavouritesPlacement.initialized) {
+    mobileFavouritesPlacement.panel = document.querySelector('.sidebar-favourites-panel');
+    mobileFavouritesPlacement.placeholder = document.createComment('mobile favourites placeholder');
+    mobileFavouritesPlacement.panel?.parentNode?.insertBefore(mobileFavouritesPlacement.placeholder, mobileFavouritesPlacement.panel);
+    mobileFavouritesPlacement.initialized = true;
+  }
+
+  const { panel, placeholder } = mobileFavouritesPlacement;
+  if (!panel || !placeholder?.parentNode) return;
+
+  if (mobileLayoutActive()) {
+    if (panel.parentNode !== sheetContent) sheetContent.appendChild(panel);
+  } else {
+    if (panel.parentNode !== placeholder.parentNode) placeholder.parentNode.insertBefore(panel, placeholder.nextSibling);
+    closeMobileFavouritesSheet();
+  }
+}
+
+function openMobileFavouritesSheet() {
+  if (!mobileLayoutActive()) return;
+  syncMobileFavouritesPlacement();
+  closeMobileSearchSheet();
+  setMobilePanel('none');
+  const sheet = $('mobile-favourites-sheet');
+  const toggle = $('mobile-favourites-toggle');
+  if (!sheet) return;
+  mobileFavouritesSheetOpen = true;
+  sheet.hidden = false;
+  toggle?.classList.add('active');
+  toggle?.setAttribute('aria-expanded', 'true');
+  requestAnimationFrame(updateFavouritesScrollHints);
+}
+
+function closeMobileFavouritesSheet() {
+  mobileFavouritesSheetOpen = false;
+  const sheet = $('mobile-favourites-sheet');
+  const toggle = $('mobile-favourites-toggle');
+  if (sheet) sheet.hidden = true;
+  toggle?.classList.remove('active');
+  toggle?.setAttribute('aria-expanded', 'false');
+  toggle?.blur?.();
+}
+
+function toggleMobileFavouritesSheet() {
+  if (mobileFavouritesSheetOpen) closeMobileFavouritesSheet();
+  else openMobileFavouritesSheet();
 }
 
 function syncLinkedEntryBackButton() {
@@ -5656,7 +5941,7 @@ function goBackFromLinkedEntry() {
 }
 
 function updateMobileIcebergScale() {
-  const root = document.documentElement;
+  const root = document.body; // see updateMobileSearchSheetMetrics note
   if (!els.wrapper) return;
 
   syncMobileSearchPlacement();
@@ -5685,7 +5970,7 @@ function updateMobileIcebergScale() {
   const styles = getComputedStyle(area || document.documentElement);
   const padX = (parseFloat(styles.paddingLeft) || 0) + (parseFloat(styles.paddingRight) || 0);
   const availableWidth = Math.max(240, areaWidth - padX);
-  const rootStyles = getComputedStyle(document.documentElement);
+  const rootStyles = getComputedStyle(document.body);
   const canvasWidth = parseFloat(rootStyles.getPropertyValue('--canvas-w')) || 980;
   const canvasHeight = parseFloat(rootStyles.getPropertyValue('--canvas-h')) || 1752;
   const desktopLabelWidth = parseFloat(rootStyles.getPropertyValue('--label-w')) || 185;
@@ -5728,6 +6013,8 @@ function initMobileLayout() {
   const detailsClose = $('mobile-details-close');
   const searchToggle = $('mobile-search-toggle');
   const searchClose = $('mobile-search-close');
+  const favouritesToggle = $('mobile-favourites-toggle');
+  const favouritesClose = $('mobile-favourites-close');
 
   entriesBtn?.addEventListener('click', () => { mobileDetailsReturnPanel = 'none'; setMobilePanel('entries'); });
   detailsBtn?.addEventListener('click', () => { mobileDetailsReturnPanel = 'none'; setMobilePanel('details'); });
@@ -5739,11 +6026,17 @@ function initMobileLayout() {
   });
   searchToggle?.addEventListener('click', toggleMobileSearchSheet);
   searchClose?.addEventListener('click', closeMobileSearchSheet);
+  favouritesToggle?.addEventListener('click', toggleMobileFavouritesSheet);
+  favouritesClose?.addEventListener('click', closeMobileFavouritesSheet);
   els.linkedEntryBack?.addEventListener('click', goBackFromLinkedEntry);
 
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape' || !mobileLayoutActive()) return;
-    if (!$('mobile-search-sheet')?.hidden) {
+    if (mobileFavouritesSheetOpen) {
+      closeMobileFavouritesSheet();
+      return;
+    }
+    if (mobileSearchSheetOpen) {
       closeMobileSearchSheet();
       return;
     }
@@ -5752,17 +6045,31 @@ function initMobileLayout() {
     }
   });
 
-  window.addEventListener('resize', () => { updateMobileIcebergScale(); updateMobileSearchSheetMetrics(); });
-  window.addEventListener('orientationchange', () => window.setTimeout(() => { updateMobileIcebergScale(); updateMobileSearchSheetMetrics(); }, 80));
+  window.addEventListener('resize', () => { updateMobileIcebergScale(); updateMobileSearchSheetMetrics(); syncMobileFavouritesPlacement(); });
+  window.addEventListener('orientationchange', () => window.setTimeout(() => { updateMobileIcebergScale(); updateMobileSearchSheetMetrics(); syncMobileFavouritesPlacement(); }, 80));
   updateMobileIcebergScale();
+  syncMobileFavouritesPlacement();
 }
 
 
 
 
+// Resolve once the canvas background is decoded (capped so a slow decode
+// can't stall the reveal). Without this the place-in animation runs while
+// the webp is still decoding, so the iceberg pops in partway through the
+// rise instead of riding it smoothly.
+function ensureIcebergBgDecoded(capMs = 900) {
+  if (ensureIcebergBgDecoded.done) return Promise.resolve();
+  const img = new Image();
+  img.src = 'images/iceberg-bg.webp';
+  const decode = (img.decode ? img.decode() : Promise.resolve()).catch(() => {});
+  const cap = new Promise(resolve => window.setTimeout(resolve, capMs));
+  return Promise.race([decode, cap]).then(() => { ensureIcebergBgDecoded.done = true; });
+}
+
 function revealIcebergFromBlueprint(options = {}) {
   const delay = Math.max(0, Number(options.delay) || 0);
-  window.setTimeout(() => {
+  ensureIcebergBgDecoded().then(() => window.setTimeout(() => {
     document.body.classList.remove('app-waiting-for-save');
     document.body.classList.remove('app-iceberg-revealing');
     // Restart the placement animation when a ZIP/autosave is loaded after boot.
@@ -5771,7 +6078,7 @@ function revealIcebergFromBlueprint(options = {}) {
     window.setTimeout(() => {
       document.body.classList.remove('app-iceberg-revealing');
     }, 980);
-  }, delay);
+  }, delay));
 }
 
 function appWaitingForSaveChoice() {

@@ -3,7 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Iceberg Tier List</title>
+<title>Interactive Iceberg</title>
+<link rel="icon" type="image/png" href="images/favicon.png">
+<link rel="preload" as="image" href="images/blueprint-grid-tile.png">
+<link rel="preload" as="image" href="images/iceberg-loader-outline.png">
+<link rel="preload" as="image" href="images/iceberg-loader-icon.png">
+<link rel="preload" as="image" href="images/iceberg-bg.webp">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body class="app-booting">
@@ -140,6 +145,11 @@
       </div>
     </section>
 
+    <section class="sidebar-favourites-panel" aria-label="Favourites">
+      <h3>Favourites</h3>
+      <div class="favourites-pool" id="favourites-pool"></div>
+    </section>
+
     <button class="sidebar-collapse-toggle" id="sidebar-collapse-toggle" type="button" aria-expanded="true" title="Hide entry tray">‹</button>
   </aside>
 
@@ -193,8 +203,13 @@
       </div>
     </div>
     <div class="detail-heading" id="detail-heading" hidden>
-      <div class="detail-title-display editable-display" id="detail-title-display" role="button" tabindex="0" title="Click to edit title"></div>
-      <textarea class="detail-title-edit" id="detail-title-edit" maxlength="80" rows="2" placeholder="Entry title..." hidden></textarea>
+      <div class="detail-title-row">
+        <div class="detail-title-main">
+          <div class="detail-title-display editable-display" id="detail-title-display" role="button" tabindex="0" title="Click to edit title"></div>
+          <textarea class="detail-title-edit" id="detail-title-edit" maxlength="80" rows="2" placeholder="Entry title..." hidden></textarea>
+        </div>
+        <button class="detail-favourite-toggle" id="detail-favourite-toggle" type="button" aria-pressed="false" aria-label="Add to favourites" title="Add to favourites"><svg class="detail-favourite-star" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 2.6l2.9 5.88 6.49.94-4.7 4.58 1.11 6.46L12 17.97l-5.8 3.05 1.11-6.46-4.7-4.58 6.49-.94z"/></svg></button>
+      </div>
       <div class="detail-title-error" id="detail-title-error" aria-live="polite"></div>
       <div class="detail-heading-tier-row">
         <span class="detail-tier" id="detail-tier"></span>
@@ -255,8 +270,18 @@
   <h2 class="mobile-search-title">Search</h2>
   <div class="mobile-search-sheet-content" id="mobile-search-sheet-content"></div>
 </div>
+<div class="mobile-search-sheet mobile-favourites-sheet" id="mobile-favourites-sheet" hidden role="dialog" aria-label="Favourites">
+  <button class="mobile-panel-close" id="mobile-favourites-close" type="button" aria-label="Close favourites panel"><svg class="btn-glyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6L18 18M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button>
+  <h2 class="mobile-search-title">Favourites</h2>
+  <div class="mobile-favourites-sheet-content" id="mobile-favourites-sheet-content"></div>
+</div>
 <nav class="mobile-bottom-nav" id="mobile-bottom-nav" aria-label="Mobile panels">
   <button class="mobile-nav-btn" id="mobile-nav-entries" type="button" aria-controls="mobile-entries-sheet" aria-expanded="false">Entries</button>
+  <button class="mobile-nav-btn mobile-favourites-toggle" id="mobile-favourites-toggle" type="button" aria-label="Favourites" aria-haspopup="dialog" aria-expanded="false">
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+      <path d="M12 2.6l2.9 5.88 6.49.94-4.7 4.58 1.11 6.46L12 17.97l-5.8 3.05 1.11-6.46-4.7-4.58 6.49-.94z" fill="currentColor"/>
+    </svg>
+  </button>
   <button class="mobile-nav-btn mobile-search-toggle" id="mobile-search-toggle" type="button" aria-label="Search" aria-haspopup="dialog" aria-expanded="false">
     <svg viewBox="0 0 24 24" width="21" height="21" aria-hidden="true">
       <circle cx="10.5" cy="10.5" r="5.5" fill="none" stroke="currentColor" stroke-width="2.4"/>
