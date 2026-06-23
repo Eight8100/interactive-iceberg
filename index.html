@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Interactive Iceberg</title>
+<link rel="icon" type="image/png" href="images/favicon.png">
+<link rel="preload" as="image" href="images/blueprint-grid-tile.png">
+<link rel="preload" as="image" href="images/iceberg-loader-outline.png">
+<link rel="preload" as="image" href="images/iceberg-loader-icon.png">
+<link rel="preload" as="image" href="images/iceberg-bg.webp">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body class="app-booting">
+<script>window.__interactiveIcebergLoaderStartedAt = performance.now();</script>
+<div class="app-loader" id="app-loader" role="status" aria-live="polite" aria-label="Loading Interactive Iceberg">
+  <div class="app-loader-grid" aria-hidden="true"></div>
+  <div class="app-loader-iceberg" aria-hidden="true">
+    <img class="app-loader-iceberg-outline" src="images/iceberg-loader-outline.png" alt="">
+    <img class="app-loader-iceberg-img app-loader-iceberg-base" src="images/iceberg-loader-icon.png" alt="">
+    <span class="app-loader-iceberg-fill-wrap">
+      <img class="app-loader-iceberg-img app-loader-iceberg-fill" src="images/iceberg-loader-icon.png" alt="">
+    </span>
+  </div>
+</div>
+<h1 class="sr-only">Interactive Iceberg</h1>
+<header>
+  <div class="logo header-left" aria-label="Menus">
+    <div class="header-menu-group" aria-label="Header menus">
+      <details class="header-menu" id="file-menu">
+        <summary class="btn menu-toggle file-menu-toggle" aria-label="Open menu" aria-haspopup="menu" aria-expanded="false" title="Menu">☰</summary>
+        <div class="app-menu-panel file-panel" role="group" aria-label="File actions menu">
+          <h3 class="menu-section-title">File</h3>
+          <div class="file-menu-section">
+            <button class="menu-item" id="save-zip-btn" type="button">Save ZIP</button>
+            <button class="menu-item" id="load-zip-btn" type="button">Load ZIP</button>
+          </div>
+          <button class="menu-item remove" id="export-btn" type="button">Export PNG</button>
+        </div>
+      </details>
+      <div class="header-canvas-tools" aria-label="Canvas controls">
+        <details class="header-menu header-display-menu" id="display-menu">
+          <summary class="btn menu-toggle display-menu-toggle" aria-label="Open display menu" aria-haspopup="menu" aria-expanded="false" title="Display">Aa</summary>
+          <div class="app-menu-panel display-panel" role="group" aria-label="Display menu">
+            <h3 class="menu-section-title">Display</h3>
+            <label for="entry-size">Text size</label>
+            <div class="slider-row">
+              <input type="range" id="entry-size" min="10" max="24" step="1" value="14">
+              <span id="entry-size-value">14px</span>
+            </div>
+            <label for="bg-blur">Background blur</label>
+            <div class="slider-row">
+              <input type="range" id="bg-blur" min="0" max="2" step="1" value="0">
+              <span id="bg-blur-value">none</span>
+            </div>
+            <label class="display-toggle-row" for="show-tier-titles">
+              <input type="checkbox" id="show-tier-titles" checked>
+              <span>Show tier titles</span>
+            </label>
+            <label class="display-toggle-row" for="show-pips">
+              <input type="checkbox" id="show-pips" checked>
+              <span>Show pips</span>
+            </label>
+            <label class="display-toggle-row" for="entry-drift">
+              <input type="checkbox" id="entry-drift" checked>
+              <span>Water effect</span>
+            </label>
+            <label for="entry-font">Font</label>
+            <select id="entry-font">
+              <option value="Georgia, serif">Georgia</option>
+              <option value="Arial Black, Arial, sans-serif">Arial Black</option>
+              <option value="Verdana, Geneva, sans-serif">Verdana</option>
+              <option value="Trebuchet MS, Arial, sans-serif">Trebuchet</option>
+              <option value="Courier New, monospace">Courier</option>
+              <option value="Impact, Haettenschweiler, sans-serif">Impact</option>
+            </select>
+          </div>
+        </details>
+        <button class="iceberg-lock-toggle header-lock-toggle" id="iceberg-lock-toggle" type="button" aria-pressed="false" aria-label="Lock iceberg editing">
+          <span class="lock-lottie" id="lock-lottie" aria-hidden="true"></span>
+          <span class="lock-fallback-icon" id="lock-fallback-icon" aria-hidden="true">🔓</span>
+          <span class="sr-only" id="lock-sr-label">Lock iceberg editing</span>
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="site-title site-title-empty" aria-hidden="true"></div>
+  <div class="header-right">
+    <div class="autosave-menu-wrap">
+      <div class="autosave-indicator" id="autosave-indicator" role="button" tabindex="0" aria-label="Log" aria-haspopup="dialog" aria-expanded="false">
+        <span class="autosave-indicator-dot" id="autosave-dot"></span>
+        <span class="autosave-indicator-text" id="autosave-indicator-text"></span>
+      </div>
+      <div class="console-popup" id="console-popup" hidden role="dialog" aria-label="Log">
+        <div class="console-popup-header">Log</div>
+        <div class="console-popup-body">
+          <div class="console-log-list" id="console-log-list" aria-live="polite">
+            <p class="console-log-empty">No recent log entries.</p>
+          </div>
+          <p class="console-notice">Entry images save with ZIP exports. Tier images autosave.</p>
+          <button class="btn console-clear-btn" id="console-clear-cache-btn" type="button">Clear autosave cache...</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="about-menu-wrap">
+      <a class="btn header-info-btn" id="about-btn" href="https://github.com/Eight8100/interactive-iceberg/blob/main/README.md" target="_blank" rel="noopener" aria-label="Open the README on GitHub" title="README">
+        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" width="22" height="22" aria-hidden="true">
+          <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M10 9v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="10" cy="6.5" r="0.75" fill="currentColor"/>
+        </svg>
+      </a>
+    </div>
+  </div>
+  <input type="file" id="file-input" accept=".zip,application/zip,application/x-zip-compressed">
+  <input type="file" id="tier-image-file" accept="image/*" hidden>
+  <input type="file" id="banner-image-file" accept="image/*" hidden>
+</header>
+
+<main class="layout">
+  <aside class="sidebar">
+    <button class="mobile-panel-close" id="mobile-entries-close" type="button" aria-label="Close entries panel"><svg class="btn-glyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6L18 18M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button>
+    <div class="sidebar-brand" aria-label="Interactive Iceberg">
+      <img class="sidebar-brand-img" src="images/interactive-iceberg-logo.png" alt="Interactive Iceberg">
+    </div>
+    <section class="sidebar-entry-panel" aria-label="Entry tray">
+      <div class="add-item-row">
+        <h3>Add entry</h3>
+        <input type="text" id="new-item-name" placeholder="Entry name..." maxlength="80" aria-describedby="add-item-error">
+        <div class="duplicate-error" id="add-item-error" aria-live="polite"></div>
+        <button class="btn primary" id="add-item-btn">Add entry</button>
+      </div>
+
+      <div class="sidebar-entry-section">
+        <h3>Unplaced</h3>
+        <div class="mobile-entries-note">Dragging and dropping entries is not supported on mobile right now. Tap an entry to view its details.</div>
+        <div class="unplaced-pool" id="unplaced-pool"></div>
+      </div>
+    </section>
+
+    <section class="sidebar-favourites-panel" aria-label="Favourites">
+      <h3>Favourites</h3>
+      <div class="favourites-pool" id="favourites-pool"></div>
+    </section>
+
+    <button class="sidebar-collapse-toggle" id="sidebar-collapse-toggle" type="button" aria-expanded="true" title="Hide entry tray">‹</button>
+  </aside>
+
+  <section class="iceberg-area">
+    <div class="iceberg-scroll-content">
+      <div class="iceberg-wrapper" id="iceberg-wrapper">
+        <div class="tiers-container" id="tiers-container"></div>
+      </div>
+    </div>
+  </section>
+
+  <aside class="detail-sidebar" id="detail-sidebar" aria-label="Entry details">
+    <button class="btn mobile-linked-entry-back" id="mobile-linked-entry-back" type="button" hidden aria-label="Back to previous linked entry"><svg class="btn-glyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 5L8 12L15 19" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <button class="mobile-panel-close" id="mobile-details-close" type="button" aria-label="Close details panel"><svg class="btn-glyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6L18 18M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button>
+    <div class="sidebar-chart-title-row">
+      <div class="chart-banner-menu-controls" id="chart-banner-actions">
+        <button class="tier-image-menu-toggle chart-banner-menu-toggle" id="chart-banner-menu-toggle" type="button" aria-label="Banner image options" aria-expanded="false"><svg class="btn-glyph btn-glyph-dots" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="5" r="1.7" fill="currentColor"/><circle cx="12" cy="12" r="1.7" fill="currentColor"/><circle cx="12" cy="19" r="1.7" fill="currentColor"/></svg></button>
+        <div class="chart-banner-menu tier-image-menu app-menu-panel" id="chart-banner-menu">
+          <button class="chart-banner-action menu-item" id="chart-banner-add-btn" type="button">Add image</button>
+          <button class="chart-banner-action menu-item" id="chart-banner-replace-btn" type="button">Replace image</button>
+          <button class="chart-banner-action menu-item danger" id="chart-banner-remove-btn" type="button">Remove image</button>
+        </div>
+      </div>
+      <div class="chart-banner-wrap" id="chart-banner-wrap" hidden>
+        <img class="chart-banner-img" id="chart-banner-img" alt="">
+      </div>
+      <div class="sidebar-chart-title-box">
+        <textarea id="chart-title" rows="1" placeholder="Untitled iceberg..." spellcheck="false"></textarea>
+      </div>
+    </div>
+    <div class="detail-search-panel">
+      <div class="search-input-wrap">
+        <input type="search" id="iceberg-search" placeholder="Find placed entries..." autocomplete="off" spellcheck="false">
+        <button class="search-random-btn" id="search-random-btn" type="button" title="Random entry" aria-label="Pick a random entry">🎲</button>
+      </div>
+      <div class="iceberg-search-count" id="iceberg-search-count" aria-live="polite"></div>
+    </div>
+    <div class="detail-placeholder active" id="detail-placeholder">
+      <div class="detail-placeholder-title">No entry selected</div>
+      <div class="detail-placeholder-copy">Click an entry to read more about it!</div>
+      <ul class="detail-placeholder-help">
+        <li>Add entries in the left sidebar, and drag anywhere onto the iceberg.</li>
+        <li>Use the search box to find specific entries.</li>
+        <li>Images and YouTube links are supported!</li>
+        <li class="desktop-only-helper">Link similar entries with the <span class="inline-connector-icon" aria-hidden="true">⊕</span> icon.</li>
+        <li class="mobile-only-helper">For more functionality, including linking entries with each other, come back on desktop.</li>
+      </ul>
+      <div class="pip-key" aria-label="Pip key">
+        <div><span class="pip-key-dot pip-key-dot--verify" aria-hidden="true"></span><span>Needs verification</span></div>
+        <div><span class="pip-key-dot pip-key-dot--missing" aria-hidden="true"></span><span>No description added</span></div>
+      </div>
+    </div>
+    <div class="detail-heading" id="detail-heading" hidden>
+      <div class="detail-title-row">
+        <div class="detail-title-main">
+          <div class="detail-title-display editable-display" id="detail-title-display" role="button" tabindex="0" title="Click to edit title"></div>
+          <textarea class="detail-title-edit" id="detail-title-edit" maxlength="80" rows="2" placeholder="Entry title..." hidden></textarea>
+        </div>
+        <button class="detail-favourite-toggle" id="detail-favourite-toggle" type="button" aria-pressed="false" aria-label="Add to favourites" title="Add to favourites"><svg class="detail-favourite-star" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 2.6l2.9 5.88 6.49.94-4.7 4.58 1.11 6.46L12 17.97l-5.8 3.05 1.11-6.46-4.7-4.58 6.49-.94z"/></svg></button>
+      </div>
+      <div class="detail-title-error" id="detail-title-error" aria-live="polite"></div>
+      <div class="detail-heading-tier-row">
+        <span class="detail-tier" id="detail-tier"></span>
+        <button class="btn detail-remove-top" id="detail-remove-delete-btn" type="button">Remove</button>
+      </div>
+    </div>
+    <div class="detail-card" id="detail-card">
+      <div class="detail-description-display" id="detail-description-display"></div>
+      <div class="description-tools rich-text-toolbar" id="description-tools" aria-label="Description formatting toolbar">
+        <button class="btn rich-text-btn" id="format-bold-btn" type="button" title="Bold (Ctrl/Cmd+B)"><strong>B</strong></button>
+        <button class="btn rich-text-btn" id="format-italic-btn" type="button" title="Italic (Ctrl/Cmd+I)"><em>I</em></button>
+        <button class="btn rich-text-btn code" id="format-code-btn" type="button" title="Inline code"><span>&lt;/&gt;</span></button>
+        <button class="btn rich-text-btn link-url" id="detail-link-url-btn" type="button" title="Add web link (Ctrl/Cmd+K)" aria-label="Add web link">🔗</button>
+        <button class="btn rich-text-btn entry-link-toolbar-btn" id="detail-pick-entry-btn" type="button" title="Link selected text to another entry" aria-label="Link related entry">⊕</button>
+      </div>
+      <div class="description-editor-wrap" id="description-editor-wrap">
+        <div class="detail-description-rich-edit" id="detail-description-rich-edit" contenteditable="true" role="textbox" aria-label="Description" aria-multiline="true" spellcheck="true" hidden></div>
+        <textarea class="detail-description-edit" id="detail-description-edit" placeholder="Description..." hidden></textarea>
+        <button class="btn rich-text-btn syntax-toggle" id="description-syntax-toggle" type="button" title="Switch to syntax editor" aria-pressed="false">
+          <span class="syntax-toggle-view">Aa</span>
+          <span class="syntax-toggle-code">&lt;/&gt;</span>
+        </button>
+      </div>
+      <div class="entry-link-actions" id="entry-link-actions">
+        <span class="description-tool-hint" id="entry-link-hint" aria-live="polite"></span>
+      </div>
+      <div class="entry-link-picker" id="entry-link-picker" hidden>
+        <input type="search" id="entry-link-search" placeholder="Search entries..." autocomplete="off" spellcheck="false">
+        <div class="entry-link-list" id="entry-link-list"></div>
+      </div>
+      <div class="image-manager" id="image-manager" aria-label="Description images">
+        <div class="image-drop-zone" id="image-drop-zone" role="button" tabindex="0">
+          <div class="image-drop-title">Drag &amp; drop images here</div>
+          <div class="image-drop-subtitle">Images save with ZIP exports.</div>
+          <div class="description-images" id="description-images"></div>
+        </div>
+        <input type="file" id="detail-image-file" accept="image/*" multiple hidden>
+        <div class="image-error" id="detail-image-error" aria-live="polite"></div>
+      </div>
+      <div class="youtube-embeds" id="youtube-embeds" hidden></div>
+      <div class="detail-verification-static" id="detail-verification-static" hidden>Entry needs verified</div>
+      <div class="detail-actions">
+        <label class="verification-toggle" for="detail-needs-verification">
+          <input type="checkbox" id="detail-needs-verification">
+          <span>Entry needs verified</span>
+        </label>
+      </div>
+    </div>
+    <div class="detail-edit-row" id="detail-edit-row" hidden>
+      <button class="btn detail-edit-btn" id="detail-edit-btn" type="button">Edit</button>
+      <button class="btn detail-done-btn" id="detail-done-btn" type="button" hidden>Done</button>
+    </div>
+    <button class="detail-collapse-toggle" id="detail-collapse-toggle" type="button" aria-expanded="true" title="Hide details">›</button>
+  </aside>
+</main>
+<div class="mobile-search-sheet" id="mobile-search-sheet" hidden role="dialog" aria-label="Search">
+  <button class="mobile-panel-close" id="mobile-search-close" type="button" aria-label="Close search panel"><svg class="btn-glyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6L18 18M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button>
+  <h2 class="mobile-search-title">Search</h2>
+  <div class="mobile-search-sheet-content" id="mobile-search-sheet-content"></div>
+</div>
+<div class="mobile-search-sheet mobile-favourites-sheet" id="mobile-favourites-sheet" hidden role="dialog" aria-label="Favourites">
+  <button class="mobile-panel-close" id="mobile-favourites-close" type="button" aria-label="Close favourites panel"><svg class="btn-glyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6L18 18M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button>
+  <h2 class="mobile-search-title">Favourites</h2>
+  <div class="mobile-favourites-sheet-content" id="mobile-favourites-sheet-content"></div>
+</div>
+<nav class="mobile-bottom-nav" id="mobile-bottom-nav" aria-label="Mobile panels">
+  <button class="mobile-nav-btn" id="mobile-nav-entries" type="button" aria-controls="mobile-entries-sheet" aria-expanded="false">Entries</button>
+  <button class="mobile-nav-btn mobile-favourites-toggle" id="mobile-favourites-toggle" type="button" aria-label="Favourites" aria-haspopup="dialog" aria-expanded="false">
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+      <path d="M12 2.6l2.9 5.88 6.49.94-4.7 4.58 1.11 6.46L12 17.97l-5.8 3.05 1.11-6.46-4.7-4.58 6.49-.94z" fill="currentColor"/>
+    </svg>
+  </button>
+  <button class="mobile-nav-btn mobile-search-toggle" id="mobile-search-toggle" type="button" aria-label="Search" aria-haspopup="dialog" aria-expanded="false">
+    <svg viewBox="0 0 24 24" width="21" height="21" aria-hidden="true">
+      <circle cx="10.5" cy="10.5" r="5.5" fill="none" stroke="currentColor" stroke-width="2.4"/>
+      <path d="M15 15l5 5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+    </svg>
+  </button>
+  <button class="mobile-nav-btn" id="mobile-nav-details" type="button" aria-controls="detail-sidebar" aria-expanded="false">Details</button>
+</nav>
+
+<canvas class="search-lines" id="search-lines" hidden aria-hidden="true"></canvas>
+<div class="image-modal" id="image-modal" hidden role="dialog" aria-modal="true" aria-label="Image preview">
+  <div class="image-modal-card">
+    <div class="image-modal-media-pane">
+      <div class="image-modal-stage">
+        <img class="image-modal-img" id="image-modal-img" alt="">
+      </div>
+      <div class="image-modal-controls" id="image-modal-controls" hidden>
+        <button class="image-modal-nav image-modal-nav-prev" id="image-modal-prev" type="button" aria-label="Previous image"><svg class="btn-glyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 5L8 12L15 19" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <div class="image-modal-count" id="image-modal-count" aria-live="polite"></div>
+        <button class="image-modal-nav image-modal-nav-next" id="image-modal-next" type="button" aria-label="Next image"><svg class="btn-glyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 5L16 12L9 19" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      </div>
+    </div>
+    <div class="image-modal-detail-pane" aria-label="Image details">
+      <textarea class="image-modal-title-edit" id="image-modal-title" rows="2" maxlength="120" placeholder="Image title..."></textarea>
+      <div class="image-modal-detail-card">
+        <div class="image-modal-tools rich-text-toolbar" id="image-modal-tools" aria-label="Image description formatting toolbar" hidden>
+          <button class="btn rich-text-btn" id="image-modal-bold-btn" type="button" title="Bold"><strong>B</strong></button>
+          <button class="btn rich-text-btn" id="image-modal-italic-btn" type="button" title="Italic"><em>I</em></button>
+          <button class="btn rich-text-btn code" id="image-modal-code-btn" type="button" title="Inline code"><span>&lt;/&gt;</span></button>
+          <button class="btn rich-text-btn link-url" id="image-modal-link-btn" type="button" title="Add web link" aria-label="Add web link">🔗</button>
+        </div>
+        <div class="image-modal-caption detail-description-rich-edit" id="image-modal-caption" contenteditable="false" role="textbox" aria-label="Image description" aria-multiline="true" spellcheck="true" data-placeholder="No description yet."></div>
+      </div>
+      <div class="image-modal-edit-row" id="image-modal-edit-row" hidden>
+        <button class="btn image-modal-edit-btn" id="image-modal-edit-btn" type="button">Edit</button>
+        <button class="btn image-modal-done-btn" id="image-modal-done-btn" type="button" hidden>Done</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="autosave-modal" id="autosave-modal" hidden role="status" aria-live="polite" aria-label="Restore autosave">
+  <div class="autosave-card">
+    <h2>A browser autosave was found.</h2>
+    <div class="autosave-title-subheading" id="autosave-title-subheading"></div>
+    <div class="autosave-meta" id="autosave-meta"></div>
+    <p class="autosave-images-note">⚠ Entry images are not included in autosaves! Use a ZIP export to restore them.</p>
+    <div class="autosave-actions autosave-actions-three">
+      <button class="btn primary" id="autosave-load-local-btn" type="button">Load ZIP</button>
+      <button class="btn" id="autosave-restore-btn" type="button">Load autosave</button>
+      <button class="btn autosave-start-blank-btn" id="autosave-fresh-btn" type="button">Start blank</button>
+    </div>
+    <div class="autosave-status" id="autosave-status" aria-live="polite"></div>
+  </div>
+</div>
+
+<div class="entry-preview" id="entry-preview" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js"></script>
+
+<script src="js/constants.js"></script>
+<script src="js/state.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/images.js"></script>
+<script src="js/canvas-geometry.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/search-lines.js"></script>
+<script src="js/render.js"></script>
+<script src="js/detail-editor.js"></script>
+<script src="js/persistence.js"></script>
+<script src="js/export.js"></script>
+<script src="js/interactions.js"></script>
+<script src="js/init.js"></script>
+<script src="js/mobile.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
