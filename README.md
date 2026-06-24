@@ -39,7 +39,19 @@ ____
 
 Just download, and then load the .zip in the Creator. Feel free to unpack the .zip and see how it all works.
 
-Please let me know of any bugs!
+**Please let me know of any bugs!**
+<br />
+
+## A note on ZIP files
+
+Interactive Iceberg has its own lightweight .zip reader, which keeps the app small and dependency-free, so it only reads **uncompressed ("stored")** .zip files.
+
+Any zips exported by Interactive Iceberg will load back in fine. If you unzip a project then try to zip it back up in the normal way, it won't load.You'll see a *"This ZIP uses compression this build cannot read"* message. If you do need to re-zip a project manually, use this in Terminal. Or just don't unpack the zip lol, it's not intended to be opened anyway. 
+
+```
+cd /path/to/your/project
+zip -0 -r project.zip .
+```
 
 ## Disclaimer
 
